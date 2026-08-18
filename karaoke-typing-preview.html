@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ライブステージ・タイピング</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep: #0d0b1a;
+  --bg-panel: #171330;
+  --gold: #ffd166;
+  --pink: #ff6fa5;
+  --cyan: #6fd9ff;
+  --ink: #f5f0ea;
+  --ink-dim: #b9b3d6;
+  --miss: #ff4d5e;
+  --font-display: "M PLUS 1p", sans-serif;
+  --font-body: "Zen Kaku Gothic New", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+*{ box-sizing: border-box; }
+
+body{
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+}
+
+.stage{
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 9 / 14;
+  max-height: 96vh;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 120% 60% at 50% 8%, rgba(255,209,102,0.10), transparent 60%),
+    linear-gradient(180deg, var(--bg-deep) 0%, #120f26 55%, #08060f 100%);
+  border-radius: 18px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+}
+
+/* ---------- 客席のペンライト ---------- */
+.crowd{
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 34%;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 6px 4px;
+  padding: 18px 22px 22px;
+  align-content: end;
+}
+
+.penlight{
+  width: 100%;
+  aspect-ratio: 1 / 2.4;
+  border-radius: 40% 40% 20% 20%;
+  background: #241f3d;
+  opacity: 0.5;
+  transform-origin: bottom center;
+  transform: rotate(0deg);
+  transition: background 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
+}
+
+.penlight.lit{
+  opacity: 1;
+  animation: sway 1.6s ease-in-out infinite;
+  box-shadow: 0 0 14px 2px var(--glow, var(--gold));
+  background: var(--glow, var(--gold));
+}
+
+@keyframes sway{
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+
+/* ---------- スポットライト ---------- */
+.spotlight{
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  width: 140%;
+  height: 70%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse 40% 60% at 50% 0%, rgba(255,209,102,0.18), transparent 70%);
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.spotlight.burst{
+  animation: burst 0.5s ease-out;
+}
+
+@keyframes burst{
+  0% { opacity: 1; background: radial-gradient(ellipse 60% 80% at 50% 0%, rgba(255,209,102,0.55), transparent 70%); }
+  100% { opacity: 0.6; }
+}
+
+/* ---------- HUD ---------- */
+.hud{
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px 0;
+}
+
+.hud-block{ display: flex; flex-direction: column; line-height: 1.1; }
+.hud-block--time{ align-items: flex-end; }
+
+.hud-label{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+}
+
+.hud-value{
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--ink);
+}
+
+#timeValue.time-warn{ color: var(--miss); }
+
+.hype-wrap{ flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.hype-bar{
+  height: 8px;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+.hype-fill{
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--pink), var(--gold));
+  transition: width 0.15s ease;
+}
+.hype-fill.maxed{ animation: pulseHype 0.6s ease infinite; }
+@keyframes pulseHype{
+  0%,100%{ filter: brightness(1); }
+  50%{ filter: brightness(1.5); }
+}
+
+/* ---------- マイク ---------- */
+.mic{
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  z-index: 4;
+  color: var(--ink-dim);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.mic.miss{
+  color: var(--miss);
+  animation: shake 0.3s ease;
+}
+@keyframes shake{
+  0%,100%{ transform: translateX(0); }
+  25%{ transform: translateX(-3px) rotate(-4deg); }
+  75%{ transform: translateX(3px) rotate(4deg); }
+}
+
+/* ---------- プロンプター ---------- */
+.prompter{
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  margin-top: 10%;
+  padding: 0 20px;
+}
+
+.prompter-kana{
+  font-size: 15px;
+  color: var(--ink-dim);
+  letter-spacing: 0.15em;
+  margin: 0 0 4px;
+  min-height: 1.2em;
+}
+
+.prompter-word{
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(32px, 8vw, 48px);
+  margin: 0;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 24px rgba(255,209,102,0.35);
+}
+
+.prompter-romaji{
+  font-family: var(--font-mono);
+  font-size: clamp(18px, 5vw, 24px);
+  letter-spacing: 0.08em;
+  margin: 10px 0 0;
+  min-height: 1.4em;
+}
+
+.romaji-done{ color: var(--gold); }
+.romaji-next{ color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+.romaji-rest{ color: var(--ink-dim); }
+
+/* ---------- オーバーレイ ---------- */
+.overlay{
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  background: rgba(8,6,15,0.92);
+  backdrop-filter: blur(2px);
+}
+
+.overlay-title{
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(28px, 7vw, 40px);
+  margin: 0 0 14px;
+  color: var(--gold);
+}
+
+.overlay-text{
+  color: var(--ink-dim);
+  line-height: 1.8;
+  margin-bottom: 26px;
+}
+
+.overlay-btn{
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--bg-deep);
+  background: linear-gradient(90deg, var(--gold), var(--pink));
+  border: none;
+  border-radius: 999px;
+  padding: 14px 32px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.overlay-btn:hover{ transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,209,102,0.3); }
+.overlay-btn:focus-visible{ outline: 3px solid var(--cyan); outline-offset: 3px; }
+
+.result-stats{
+  display: flex;
+  gap: 28px;
+  margin-bottom: 30px;
+}
+.result-stats > div{ display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.result-num{
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 26px;
+  color: var(--ink);
+}
+
+@media (max-width: 400px){
+  .crowd{ grid-template-columns: repeat(7, 1fr); }
+}
+
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <!-- 客席のペンライト -->
+  <div class="crowd" id="crowd"></div>
+
+  <!-- スポットライト -->
+  <div class="spotlight" id="spotlight"></div>
+
+  <!-- HUD -->
+  <header class="hud">
+    <div class="hud-block">
+      <span class="hud-label">SCORE</span>
+      <span class="hud-value" id="scoreValue">0</span>
+    </div>
+    <div class="hype-wrap">
+      <span class="hud-label">HYPE</span>
+      <div class="hype-bar"><div class="hype-fill" id="hypeFill"></div></div>
+    </div>
+    <div class="hud-block hud-block--time">
+      <span class="hud-label">TIME</span>
+      <span class="hud-value" id="timeValue">60</span>
+    </div>
+  </header>
+
+  <!-- マイク（ミス時に赤く光る） -->
+  <div class="mic" id="mic">
+    <svg viewBox="0 0 24 24" width="40" height="40">
+      <path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/>
+    </svg>
+  </div>
+
+  <!-- プロンプター（お題表示） -->
+  <main class="prompter">
+    <p class="prompter-kana" id="promptKana">&nbsp;</p>
+    <h1 class="prompter-word" id="promptWord">START</h1>
+    <p class="prompter-romaji" id="promptRomaji">&nbsp;</p>
+  </main>
+
+  <!-- スタート画面 -->
+  <div class="overlay" id="startOverlay">
+    <h2 class="overlay-title">MIC CHECK</h2>
+    <p class="overlay-text">表示された単語をローマ字で打ち切って、<br>客席のペンライトを灯していこう。<br>制限時間は60秒のスコアアタック。</p>
+    <button class="overlay-btn" id="startBtn">ステージに立つ</button>
+  </div>
+
+  <!-- 結果画面 -->
+  <div class="overlay" id="resultOverlay" hidden>
+    <h2 class="overlay-title" id="resultRank">-</h2>
+    <div class="result-stats">
+      <div><span class="hud-label">SCORE</span><span class="result-num" id="resultScore">0</span></div>
+      <div><span class="hud-label">正打数</span><span class="result-num" id="resultChars">0</span></div>
+      <div><span class="hud-label">正答率</span><span class="result-num" id="resultAcc">0%</span></div>
+    </div>
+    <button class="overlay-btn" id="retryBtn">アンコール（もう一度）</button>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================
+   ライブステージ・タイピング
+   打鍵ごとに客席のペンライトが1本ずつ灯っていくタイピングゲーム
+   ========================================================= */
+
+// お題リスト（表示語 / ふりがな / 正解ローマ字 / 別解ローマ字）
+const WORDS = [
+  { word: "夢",       kana: "ゆめ",         romaji: ["yume"] },
+  { word: "情熱",     kana: "じょうねつ",   romaji: ["jounetsu", "zyounetsu"] },
+  { word: "声援",     kana: "せいえん",     romaji: ["seien"] },
+  { word: "拍手",     kana: "はくしゅ",     romaji: ["hakushu", "hakusyu"] },
+  { word: "叫べ",     kana: "さけべ",       romaji: ["sakebe"] },
+  { word: "涙",       kana: "なみだ",       romaji: ["namida"] },
+  { word: "奇跡",     kana: "きせき",       romaji: ["kiseki"] },
+  { word: "運命",     kana: "うんめい",     romaji: ["unmei"] },
+  { word: "青春",     kana: "せいしゅん",   romaji: ["seishun", "seisyun"] },
+  { word: "太陽",     kana: "たいよう",     romaji: ["taiyou"] },
+  { word: "明日",     kana: "あした",       romaji: ["ashita"] },
+  { word: "希望",     kana: "きぼう",       romaji: ["kibou"] },
+  { word: "旅立ち",   kana: "たびだち",     romaji: ["tabidachi", "tabidati"] },
+  { word: "主人公",   kana: "しゅじんこう", romaji: ["shujinkou", "syuzinkou"] },
+  { word: "花道",     kana: "はなみち",     romaji: ["hanamichi", "hanamiti"] },
+  { word: "歓声",     kana: "かんせい",     romaji: ["kansei"] },
+  { word: "熱狂",     kana: "ねっきょう",   romaji: ["nekkyou"] },
+  { word: "喝采",     kana: "かっさい",     romaji: ["kassai"] },
+  { word: "全力",     kana: "ぜんりょく",   romaji: ["zenryoku"] },
+  { word: "光",       kana: "ひかり",       romaji: ["hikari"] },
+  { word: "アンコール", kana: "あんこーる", romaji: ["ankoru", "ankooru"] },
+  { word: "一期一会", kana: "いちごいちえ", romaji: ["ichigoichie", "itigoitie"] },
+  { word: "本気",     kana: "ほんき",       romaji: ["honki"] },
+  { word: "絆",       kana: "きずな",       romaji: ["kizuna"] },
+  { word: "煌めき",   kana: "きらめき",     romaji: ["kirameki"] },
+  { word: "最高",     kana: "さいこう",     romaji: ["saikou"] },
+  { word: "感謝",     kana: "かんしゃ",     romaji: ["kansha", "kansya"] },
+  { word: "喉が枯れる", kana: "のどがかれる", romaji: ["nodogakareru"] },
+  { word: "魂",       kana: "たましい",     romaji: ["tamashii", "tamasii"] },
+  { word: "全開",     kana: "ぜんかい",     romaji: ["zenkai"] },
+];
+
+const PENLIGHT_COLORS = ["--gold", "--pink", "--cyan"];
+const GAME_SECONDS = 60;
+const CROWD_SIZE = 63; // 9列 x 7段
+
+const el = {
+  crowd: document.getElementById("crowd"),
+  spotlight: document.getElementById("spotlight"),
+  mic: document.getElementById("mic"),
+  scoreValue: document.getElementById("scoreValue"),
+  timeValue: document.getElementById("timeValue"),
+  hypeFill: document.getElementById("hypeFill"),
+  promptKana: document.getElementById("promptKana"),
+  promptWord: document.getElementById("promptWord"),
+  promptRomaji: document.getElementById("promptRomaji"),
+  startOverlay: document.getElementById("startOverlay"),
+  startBtn: document.getElementById("startBtn"),
+  resultOverlay: document.getElementById("resultOverlay"),
+  resultRank: document.getElementById("resultRank"),
+  resultScore: document.getElementById("resultScore"),
+  resultChars: document.getElementById("resultChars"),
+  resultAcc: document.getElementById("resultAcc"),
+  retryBtn: document.getElementById("retryBtn"),
+};
+
+let state = null;
+
+function buildCrowd() {
+  el.crowd.innerHTML = "";
+  for (let i = 0; i < CROWD_SIZE; i++) {
+    const p = document.createElement("div");
+    p.className = "penlight";
+    el.crowd.appendChild(p);
+  }
+}
+
+function pickWord(excludeWord) {
+  let candidate;
+  do {
+    candidate = WORDS[Math.floor(Math.random() * WORDS.length)];
+  } while (WORDS.length > 1 && candidate === excludeWord);
+  return candidate;
+}
+
+function initState() {
+  return {
+    running: false,
+    timeLeft: GAME_SECONDS,
+    score: 0,
+    correctChars: 0,
+    missChars: 0,
+    hype: 0,
+    current: null,
+    typed: "",
+    litCount: 0,
+    timerId: null,
+  };
+}
+
+function renderPrompt() {
+  const { current, typed } = state;
+  el.promptKana.textContent = current.kana;
+  el.promptWord.textContent = current.word;
+
+  const answer = current.romaji[0];
+  const done = answer.slice(0, typed.length);
+  const next = answer.slice(typed.length, typed.length + 1);
+  const rest = answer.slice(typed.length + 1);
+
+  el.promptRomaji.innerHTML =
+    `<span class="romaji-done">${done}</span>` +
+    `<span class="romaji-next">${next}</span>` +
+    `<span class="romaji-rest">${rest}</span>`;
+}
+
+function nextWord() {
+  state.current = pickWord(state.current);
+  state.typed = "";
+  renderPrompt();
+}
+
+function updateHud() {
+  el.scoreValue.textContent = state.score;
+  el.timeValue.textContent = state.timeLeft;
+  el.timeValue.classList.toggle("time-warn", state.timeLeft <= 10);
+  el.hypeFill.style.width = `${state.hype}%`;
+  el.hypeFill.classList.toggle("maxed", state.hype >= 100);
+}
+
+function lightNextPenlight() {
+  const lights = el.crowd.children;
+  if (lights.length === 0) return;
+  state.litCount = (state.litCount + 1) % lights.length;
+  const target = lights[state.litCount];
+  const color = PENLIGHT_COLORS[Math.floor(Math.random() * PENLIGHT_COLORS.length)];
+  target.style.setProperty("--glow", `var(${color})`);
+  target.classList.add("lit");
+}
+
+function flashMiss() {
+  el.mic.classList.remove("miss");
+  // reflow で再アニメーションさせる
+  void el.mic.offsetWidth;
+  el.mic.classList.add("miss");
+}
+
+function burstSpotlight() {
+  el.spotlight.classList.remove("burst");
+  void el.spotlight.offsetWidth;
+  el.spotlight.classList.add("burst");
+}
+
+function isAnswerMatch(typed, romajiOptions) {
+  return romajiOptions.some((r) => r === typed);
+}
+
+function isPrefixOfAny(typed, romajiOptions) {
+  return romajiOptions.some((r) => r.startsWith(typed));
+}
+
+function handleKey(e) {
+  if (!state.running) return;
+  // 単一の英字キーのみ受け付ける（Shiftなどの修飾キーは無視）
+  if (e.key.length !== 1 || !/^[a-zA-Z]$/.test(e.key)) return;
+
+  const key = e.key.toLowerCase();
+  const attempt = state.typed + key;
+  const { romaji } = state.current;
+
+  if (isPrefixOfAny(attempt, romaji)) {
+    // 正しい打鍵
+    state.typed = attempt;
+    state.correctChars += 1;
+    state.score += 10;
+    state.hype = Math.min(100, state.hype + 4);
+    lightNextPenlight();
+    renderPrompt();
+    updateHud();
+
+    if (isAnswerMatch(state.typed, romaji)) {
+      // 単語を打ち切った
+      state.score += 20;
+      burstSpotlight();
+      nextWord();
+    }
+  } else {
+    // ミス打鍵
+    state.missChars += 1;
+    state.hype = Math.max(0, state.hype - 6);
+    flashMiss();
+    updateHud();
+  }
+}
+
+function tick() {
+  state.timeLeft -= 1;
+  updateHud();
+  if (state.timeLeft <= 0) {
+    endGame();
+  }
+}
+
+function rankFor(score) {
+  if (score >= 1400) return "伝説のボーカリスト";
+  if (score >= 900) return "ライブの主役";
+  if (score >= 500) return "頼れるバンドマン";
+  if (score >= 200) return "見習いシンガー";
+  return "路上ライブ初日";
+}
+
+function startGame() {
+  state = initState();
+  state.running = true;
+  buildCrowd();
+  nextWord();
+  updateHud();
+  el.startOverlay.hidden = true;
+  el.resultOverlay.hidden = true;
+  state.timerId = setInterval(tick, 1000);
+}
+
+function endGame() {
+  state.running = false;
+  clearInterval(state.timerId);
+
+  const totalChars = state.correctChars + state.missChars;
+  const acc = totalChars === 0 ? 0 : Math.round((state.correctChars / totalChars) * 100);
+
+  el.resultRank.textContent = rankFor(state.score);
+  el.resultScore.textContent = state.score;
+  el.resultChars.textContent = state.correctChars;
+  el.resultAcc.textContent = `${acc}%`;
+  el.resultOverlay.hidden = false;
+}
+
+el.startBtn.addEventListener("click", startGame);
+el.retryBtn.addEventListener("click", startGame);
+window.addEventListener("keydown", handleKey);
+
+// 初期表示
+buildCrowd();
+
+</script>
+</body>
+</html>

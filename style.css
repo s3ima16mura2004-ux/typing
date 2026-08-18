@@ -1,0 +1,268 @@
+:root{
+  --bg-deep: #0d0b1a;
+  --bg-panel: #171330;
+  --gold: #ffd166;
+  --pink: #ff6fa5;
+  --cyan: #6fd9ff;
+  --ink: #f5f0ea;
+  --ink-dim: #b9b3d6;
+  --miss: #ff4d5e;
+  --font-display: "M PLUS 1p", sans-serif;
+  --font-body: "Zen Kaku Gothic New", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+*{ box-sizing: border-box; }
+
+body{
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+}
+
+.stage{
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 9 / 14;
+  max-height: 96vh;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 120% 60% at 50% 8%, rgba(255,209,102,0.10), transparent 60%),
+    linear-gradient(180deg, var(--bg-deep) 0%, #120f26 55%, #08060f 100%);
+  border-radius: 18px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+}
+
+/* ---------- 客席のペンライト ---------- */
+.crowd{
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 34%;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 6px 4px;
+  padding: 18px 22px 22px;
+  align-content: end;
+}
+
+.penlight{
+  width: 100%;
+  aspect-ratio: 1 / 2.4;
+  border-radius: 40% 40% 20% 20%;
+  background: #241f3d;
+  opacity: 0.5;
+  transform-origin: bottom center;
+  transform: rotate(0deg);
+  transition: background 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
+}
+
+.penlight.lit{
+  opacity: 1;
+  animation: sway 1.6s ease-in-out infinite;
+  box-shadow: 0 0 14px 2px var(--glow, var(--gold));
+  background: var(--glow, var(--gold));
+}
+
+@keyframes sway{
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+
+/* ---------- スポットライト ---------- */
+.spotlight{
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  width: 140%;
+  height: 70%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse 40% 60% at 50% 0%, rgba(255,209,102,0.18), transparent 70%);
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.spotlight.burst{
+  animation: burst 0.5s ease-out;
+}
+
+@keyframes burst{
+  0% { opacity: 1; background: radial-gradient(ellipse 60% 80% at 50% 0%, rgba(255,209,102,0.55), transparent 70%); }
+  100% { opacity: 0.6; }
+}
+
+/* ---------- HUD ---------- */
+.hud{
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px 0;
+}
+
+.hud-block{ display: flex; flex-direction: column; line-height: 1.1; }
+.hud-block--time{ align-items: flex-end; }
+
+.hud-label{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+}
+
+.hud-value{
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--ink);
+}
+
+#timeValue.time-warn{ color: var(--miss); }
+
+.hype-wrap{ flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.hype-bar{
+  height: 8px;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+.hype-fill{
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--pink), var(--gold));
+  transition: width 0.15s ease;
+}
+.hype-fill.maxed{ animation: pulseHype 0.6s ease infinite; }
+@keyframes pulseHype{
+  0%,100%{ filter: brightness(1); }
+  50%{ filter: brightness(1.5); }
+}
+
+/* ---------- マイク ---------- */
+.mic{
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  z-index: 4;
+  color: var(--ink-dim);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.mic.miss{
+  color: var(--miss);
+  animation: shake 0.3s ease;
+}
+@keyframes shake{
+  0%,100%{ transform: translateX(0); }
+  25%{ transform: translateX(-3px) rotate(-4deg); }
+  75%{ transform: translateX(3px) rotate(4deg); }
+}
+
+/* ---------- プロンプター ---------- */
+.prompter{
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  margin-top: 10%;
+  padding: 0 20px;
+}
+
+.prompter-kana{
+  font-size: 15px;
+  color: var(--ink-dim);
+  letter-spacing: 0.15em;
+  margin: 0 0 4px;
+  min-height: 1.2em;
+}
+
+.prompter-word{
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(32px, 8vw, 48px);
+  margin: 0;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 24px rgba(255,209,102,0.35);
+}
+
+.prompter-romaji{
+  font-family: var(--font-mono);
+  font-size: clamp(18px, 5vw, 24px);
+  letter-spacing: 0.08em;
+  margin: 10px 0 0;
+  min-height: 1.4em;
+}
+
+.romaji-done{ color: var(--gold); }
+.romaji-next{ color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+.romaji-rest{ color: var(--ink-dim); }
+
+/* ---------- オーバーレイ ---------- */
+.overlay{
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  background: rgba(8,6,15,0.92);
+  backdrop-filter: blur(2px);
+}
+
+.overlay-title{
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(28px, 7vw, 40px);
+  margin: 0 0 14px;
+  color: var(--gold);
+}
+
+.overlay-text{
+  color: var(--ink-dim);
+  line-height: 1.8;
+  margin-bottom: 26px;
+}
+
+.overlay-btn{
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--bg-deep);
+  background: linear-gradient(90deg, var(--gold), var(--pink));
+  border: none;
+  border-radius: 999px;
+  padding: 14px 32px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.overlay-btn:hover{ transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,209,102,0.3); }
+.overlay-btn:focus-visible{ outline: 3px solid var(--cyan); outline-offset: 3px; }
+
+.result-stats{
+  display: flex;
+  gap: 28px;
+  margin-bottom: 30px;
+}
+.result-stats > div{ display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.result-num{
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 26px;
+  color: var(--ink);
+}
+
+@media (max-width: 400px){
+  .crowd{ grid-template-columns: repeat(7, 1fr); }
+}
