@@ -19,9 +19,10 @@
   <!-- スポットライト -->
   <div class="spotlight" id="spotlight"></div>
 
-  <!-- 左上コントロール（ミュート・一時停止） -->
+  <!-- 左上コントロール（ミュート・BGM・一時停止） -->
   <div class="top-controls">
     <button class="icon-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="音を消す">🔊</button>
+    <button class="icon-btn" id="bgmBtn" type="button" aria-pressed="false" aria-label="BGMを鳴らす">🎵</button>
     <button class="icon-btn" id="pauseBtn" type="button" aria-label="一時停止">⏸</button>
   </div>
 
@@ -88,6 +89,16 @@
       <span>練習モード（タイマーなし・スコア記録なし）</span>
     </label>
 
+    <button type="button" class="daily-btn" id="dailyBtn">
+      <span class="daily-btn-title">🗓️ 今日のステージに挑戦</span>
+      <span class="daily-btn-status" id="dailyStatusInline">本日はまだ未挑戦</span>
+    </button>
+
+    <div class="menu-links">
+      <button type="button" class="overlay-btn overlay-btn--sub" id="titlesBtn">🏆 称号一覧</button>
+      <button type="button" class="overlay-btn overlay-btn--sub" id="rankingBtn">📊 ランキング</button>
+    </div>
+
     <p class="best-note" id="startBest">自己ベスト：-</p>
 
     <button class="overlay-btn" id="startBtn">ステージに立つ</button>
@@ -102,6 +113,7 @@
       <div><span class="hud-label">正打数</span><span class="result-num" id="resultChars">0</span></div>
       <div><span class="hud-label">正答率</span><span class="result-num" id="resultAcc">0%</span></div>
     </div>
+    <div class="new-titles" id="newTitles" hidden></div>
     <button class="overlay-btn" id="retryBtn">アンコール（もう一度）</button>
     <button class="overlay-btn overlay-btn--sub" id="shareBtn">結果を画像で保存</button>
     <button class="overlay-btn overlay-btn--sub" id="backToMenuBtn">難易度を選びなおす</button>
@@ -118,6 +130,22 @@
   <!-- カウントダウン画面 -->
   <div class="overlay countdown-overlay" id="countdownOverlay" hidden>
     <span class="countdown-num" id="countdownNum">3</span>
+  </div>
+
+  <!-- 称号一覧画面 -->
+  <div class="overlay list-overlay" id="titlesOverlay" hidden>
+    <h2 class="overlay-title">称号一覧</h2>
+    <p class="best-note" id="titlesCount">0 / 0 個の称号を獲得</p>
+    <div class="scroll-list" id="titlesList"></div>
+    <button class="overlay-btn overlay-btn--sub" id="titlesCloseBtn">閉じる</button>
+  </div>
+
+  <!-- ランキング画面 -->
+  <div class="overlay list-overlay" id="rankingOverlay" hidden>
+    <h2 class="overlay-title">ローカルランキング</h2>
+    <p class="best-note" id="dailyStatus">本日はまだ未挑戦です</p>
+    <div class="scroll-list" id="rankingList"></div>
+    <button class="overlay-btn overlay-btn--sub" id="rankingCloseBtn">閉じる</button>
   </div>
 
 </div>
@@ -214,6 +242,10 @@
   >
 </div>
 
-<script src="script.js"></script>
+<script src="words.js"></script>
+<script src="audio.js"></script>
+<script src="titles.js"></script>
+<script src="game.js"></script>
+<script src="flick-keyboard.js"></script>
 </body>
 </html>

@@ -193,6 +193,7 @@ body{
 .icon-btn:hover{ background: rgba(255,255,255,0.16); }
 .icon-btn:active{ transform: scale(0.92); }
 .icon-btn:focus-visible{ outline: 2px solid var(--cyan); outline-offset: 2px; }
+.icon-btn.off{ opacity: 0.4; }
 
 /* ---------- カウントダウン ---------- */
 .countdown-overlay{
@@ -453,6 +454,167 @@ body{
   height: 16px;
   accent-color: var(--gold);
   cursor: pointer;
+}
+
+/* ---------- デイリーチャレンジボタン ---------- */
+.daily-btn{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto 14px;
+  border: 1px solid rgba(111, 217, 255, 0.35);
+  border-radius: 12px;
+  background: rgba(111, 217, 255, 0.08);
+  color: var(--ink);
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.daily-btn:hover{
+  background: rgba(111, 217, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.daily-btn-title{
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.daily-btn-status{
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--cyan);
+}
+
+/* ---------- 称号一覧・ランキングへのリンク ---------- */
+.menu-links{
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.menu-links .overlay-btn--sub{
+  margin-top: 0;
+  font-size: 12px;
+  padding: 10px 16px;
+}
+
+/* ---------- リスト表示オーバーレイ（称号一覧・ランキング） ---------- */
+.list-overlay{
+  justify-content: flex-start;
+  padding-top: 48px;
+  overflow-y: auto;
+}
+
+.scroll-list{
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.title-card{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  border-radius: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--bg-panel);
+}
+
+.title-card.unlocked{
+  border-color: rgba(255, 209, 102, 0.45);
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.title-icon{
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.title-name{
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.title-card.locked .title-name{
+  color: var(--ink-dim);
+}
+
+.title-desc{
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin-top: 2px;
+}
+
+.rank-row{
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bg-panel);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.rank-no{
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.rank-score{
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.rank-diff,
+.rank-date{
+  font-size: 11px;
+  color: var(--ink-dim);
+}
+
+/* ---------- 新しい称号を獲得した表示 ---------- */
+.new-titles{
+  margin-bottom: 18px;
+}
+
+.new-titles-heading{
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--gold);
+  margin: 0 0 8px;
+}
+
+.new-title-badge{
+  display: inline-block;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--bg-deep);
+  background: linear-gradient(90deg, var(--gold), var(--pink));
+  border-radius: 999px;
+  padding: 5px 14px;
+  margin: 0 4px 6px 0;
 }
 
 .overlay-btn{
