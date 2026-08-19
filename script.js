@@ -955,12 +955,31 @@ if (kbdToggle) {
   setKbdMode(safeGet(KBD_MODE_KEY) || "custom");
 }
 
-// 端末純正キーボードからの入力（ローマ字・かなの両方に対応。1文字ずつ拾ってすぐ入力欄をクリアする）
+// 端末純正キーボードからの入力（ローマ字・かなの両方に対応）
+// かな入力はIME（変換）を経由する端末があるため、変換中の "input" イベントは無視し、
+// 変換が確定した（compositionend / isComposing=false の）タイミングでのみ文字を確定する。
+// これをしないと、変換途中の文字まで拾ってお題が誤って進んでしまう。
 if (nativeInput) {
-  nativeInput.addEventListener("input", () => {
+  let ignoreNextInput = false;
+
+  const consumeInput = () => {
     const chars = nativeInput.value.match(/[a-zA-Z\u3041-\u309F\u30FC-]/g) || [];
     chars.forEach((ch) => typeChar(ch));
     nativeInput.value = "";
+  };
+
+  nativeInput.addEventListener("input", (e) => {
+    if (ignoreNextInput) {
+      ignoreNextInput = false;
+      return;
+    }
+    if (e.isComposing) return; // 変換中は無視
+    consumeInput();
+  });
+
+  nativeInput.addEventListener("compositionend", () => {
+    consumeInput();
+    ignoreNextInput = true; // 直後に発火する重複のinputイベントを1回だけ無視する
   });
 }
 

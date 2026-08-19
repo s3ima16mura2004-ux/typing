@@ -121,7 +121,7 @@ body{
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px 18px 0;
+  padding: 56px 18px 0;
 }
 
 .hud-block{ display: flex; flex-direction: column; line-height: 1.1; }
@@ -302,7 +302,18 @@ body{
   z-index: 2;
   text-align: center;
   margin-top: 10%;
-  padding: 0 20px;
+  padding: 24px 20px;
+}
+
+/* 客席が明るく光っても文字が読めるよう、背後に暗いパネルを敷く */
+.prompter::before{
+  content: "";
+  position: absolute;
+  inset: -8px 8px;
+  z-index: -1;
+  background: rgba(8, 6, 15, 0.55);
+  border-radius: 20px;
+  backdrop-filter: blur(6px);
 }
 
 .prompter-kana{
@@ -311,6 +322,7 @@ body{
   letter-spacing: 0.15em;
   margin: 0 0 4px;
   min-height: 1.2em;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.8);
 }
 
 .prompter-word{
@@ -319,7 +331,7 @@ body{
   font-size: clamp(32px, 8vw, 48px);
   margin: 0;
   letter-spacing: 0.04em;
-  text-shadow: 0 0 24px rgba(255,209,102,0.35);
+  text-shadow: 0 0 24px rgba(255,209,102,0.35), 0 2px 10px rgba(0,0,0,0.85);
 }
 
 .prompter-romaji{
@@ -328,6 +340,7 @@ body{
   letter-spacing: 0.08em;
   margin: 10px 0 0;
   min-height: 1.4em;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.8);
 }
 
 .romaji-done{ color: var(--gold); }
@@ -1740,12 +1753,31 @@ if (kbdToggle) {
   setKbdMode(safeGet(KBD_MODE_KEY) || "custom");
 }
 
-// 端末純正キーボードからの入力（ローマ字・かなの両方に対応。1文字ずつ拾ってすぐ入力欄をクリアする）
+// 端末純正キーボードからの入力（ローマ字・かなの両方に対応）
+// かな入力はIME（変換）を経由する端末があるため、変換中の "input" イベントは無視し、
+// 変換が確定した（compositionend / isComposing=false の）タイミングでのみ文字を確定する。
+// これをしないと、変換途中の文字まで拾ってお題が誤って進んでしまう。
 if (nativeInput) {
-  nativeInput.addEventListener("input", () => {
+  let ignoreNextInput = false;
+
+  const consumeInput = () => {
     const chars = nativeInput.value.match(/[a-zA-Z\u3041-\u309F\u30FC-]/g) || [];
     chars.forEach((ch) => typeChar(ch));
     nativeInput.value = "";
+  };
+
+  nativeInput.addEventListener("input", (e) => {
+    if (ignoreNextInput) {
+      ignoreNextInput = false;
+      return;
+    }
+    if (e.isComposing) return; // 変換中は無視
+    consumeInput();
+  });
+
+  nativeInput.addEventListener("compositionend", () => {
+    consumeInput();
+    ignoreNextInput = true; // 直後に発火する重複のinputイベントを1回だけ無視する
   });
 }
 
