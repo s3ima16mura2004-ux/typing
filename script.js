@@ -3,58 +3,160 @@
    打鍵ごとに客席のペンライトが1本ずつ灯っていくタイピングゲーム
    ========================================================= */
 
-// お題リスト（表示語 / ふりがな / 正解ローマ字 / 別解ローマ字）
-const WORDS = [
-  { word: "夢",       kana: "ゆめ",         romaji: ["yume"] },
-  { word: "情熱",     kana: "じょうねつ",   romaji: ["jounetsu", "zyounetsu", "jounetu"] },
-  { word: "声援",     kana: "せいえん",     romaji: ["seien"] },
-  { word: "拍手",     kana: "はくしゅ",     romaji: ["hakushu", "hakusyu"] },
-  { word: "叫べ",     kana: "さけべ",       romaji: ["sakebe"] },
-  { word: "涙",       kana: "なみだ",       romaji: ["namida"] },
-  { word: "奇跡",     kana: "きせき",       romaji: ["kiseki"] },
-  { word: "運命",     kana: "うんめい",     romaji: ["unmei"] },
-  { word: "青春",     kana: "せいしゅん",   romaji: ["seishun", "seisyun"] },
-  { word: "太陽",     kana: "たいよう",     romaji: ["taiyou"] },
-  { word: "明日",     kana: "あした",       romaji: ["ashita", "asita"] },
-  { word: "希望",     kana: "きぼう",       romaji: ["kibou"] },
-  { word: "旅立ち",   kana: "たびだち",     romaji: ["tabidachi", "tabidati"] },
-  { word: "主人公",   kana: "しゅじんこう", romaji: ["shujinkou", "syuzinkou"] },
-  { word: "花道",     kana: "はなみち",     romaji: ["hanamichi", "hanamiti"] },
-  { word: "歓声",     kana: "かんせい",     romaji: ["kansei"] },
-  { word: "熱狂",     kana: "ねっきょう",   romaji: ["nekkyou"] },
-  { word: "喝采",     kana: "かっさい",     romaji: ["kassai"] },
-  { word: "全力",     kana: "ぜんりょく",   romaji: ["zenryoku"] },
-  { word: "光",       kana: "ひかり",       romaji: ["hikari"] },
-  { word: "アンコール", kana: "あんこーる", romaji: ["ankoru", "ankooru","anko-ru"] },
-  { word: "一期一会", kana: "いちごいちえ", romaji: ["ichigoichie", "itigoitie"] },
-  { word: "本気",     kana: "ほんき",       romaji: ["honki"] },
-  { word: "絆",       kana: "きずな",       romaji: ["kizuna"] },
-  { word: "煌めき",   kana: "きらめき",     romaji: ["kirameki"] },
-  { word: "最高",     kana: "さいこう",     romaji: ["saikou"] },
-  { word: "感謝",     kana: "かんしゃ",     romaji: ["kansha", "kansya"] },
-  { word: "喉が枯れる", kana: "のどがかれる", romaji: ["nodogakareru"] },
-  { word: "魂",       kana: "たましい",     romaji: ["tamashii", "tamasii"] },
-  { word: "全開",     kana: "ぜんかい",     romaji: ["zenkai"] },
+// ---------- お題リスト（難易度別） ----------
+// word: 表示語 / kana: ふりがな（かな入力の正解） / romaji: 正解ローマ字（表記ゆれは配列で複数指定）
+
+const EASY_WORDS = [
+  { word: "夢",   kana: "ゆめ",   romaji: ["yume"] },
+  { word: "叫べ", kana: "さけべ", romaji: ["sakebe"] },
+  { word: "涙",   kana: "なみだ", romaji: ["namida"] },
+  { word: "奇跡", kana: "きせき", romaji: ["kiseki"] },
+  { word: "明日", kana: "あした", romaji: ["ashita"] },
+  { word: "希望", kana: "きぼう", romaji: ["kibou"] },
+  { word: "光",   kana: "ひかり", romaji: ["hikari"] },
+  { word: "本気", kana: "ほんき", romaji: ["honki"] },
+  { word: "絆",   kana: "きずな", romaji: ["kizuna"] },
+];
+
+const NORMAL_WORDS = [
+  { word: "情熱",   kana: "じょうねつ", romaji: ["jounetsu", "zyounetsu"] },
+  { word: "声援",   kana: "せいえん",   romaji: ["seien"] },
+  { word: "拍手",   kana: "はくしゅ",   romaji: ["hakushu", "hakusyu"] },
+  { word: "運命",   kana: "うんめい",   romaji: ["unmei"] },
+  { word: "青春",   kana: "せいしゅん", romaji: ["seishun", "seisyun"] },
+  { word: "太陽",   kana: "たいよう",   romaji: ["taiyou"] },
+  { word: "旅立ち", kana: "たびだち",   romaji: ["tabidachi", "tabidati"] },
+  { word: "花道",   kana: "はなみち",   romaji: ["hanamichi", "hanamiti"] },
+  { word: "歓声",   kana: "かんせい",   romaji: ["kansei"] },
+  { word: "熱狂",   kana: "ねっきょう", romaji: ["nekkyou"] },
+  { word: "喝采",   kana: "かっさい",   romaji: ["kassai"] },
+  { word: "全力",   kana: "ぜんりょく", romaji: ["zenryoku"] },
+  { word: "アンコール", kana: "あんこーる", romaji: ["ankoru", "ankooru"] },
+  { word: "煌めき", kana: "きらめき",   romaji: ["kirameki"] },
+  { word: "最高",   kana: "さいこう",   romaji: ["saikou"] },
+  { word: "感謝",   kana: "かんしゃ",   romaji: ["kansha", "kansya"] },
+  { word: "魂",     kana: "たましい",   romaji: ["tamashii", "tamasii"] },
+  { word: "全開",   kana: "ぜんかい",   romaji: ["zenkai"] },
+];
+
+const HARD_WORDS = [
+  { word: "主人公",     kana: "しゅじんこう",     romaji: ["shujinkou", "syuzinkou"] },
+  { word: "一期一会",   kana: "いちごいちえ",     romaji: ["ichigoichie", "itigoitie"] },
+  { word: "喉が枯れる", kana: "のどがかれる",     romaji: ["nodogakareru"] },
+  { word: "感無量",     kana: "かんむりょう",     romaji: ["kanmuryou"] },
+  { word: "拍手喝采",   kana: "はくしゅかっさい", romaji: ["hakushukassai", "hakusyukassai"] },
+  { word: "一世一代",   kana: "いっせいちだい",   romaji: ["isseichidai"] },
+  { word: "声を枯らして", kana: "こえをからして", romaji: ["koewokarashite"] },
+  { word: "心を燃やせ", kana: "こころをもやせ",   romaji: ["kokorowomoyase"] },
+  { word: "万雷の拍手", kana: "ばんらいのはくしゅ", romaji: ["banrainohakushu", "banrainohakusyu"] },
+  { word: "一生忘れない", kana: "いっしょうわすれない", romaji: ["isshouwasurenai", "issyouwasurenai"] },
+];
+
+// ---------- ローマ字の表記ゆれを自動で展開する ----------
+// 個別の単語ごとに手打ちしなくても、今後お題が増えたときに以下のルールが自動で効く：
+//   ・「tsu」⇄「tu」（例: jounetsu ⇄ jounetu）
+//   ・母音を重ねる長音表記 ⇄ ハイフン表記（例: ankooru ⇄ anko-ru）
+function expandRomajiVariants(str) {
+  let variants = new Set([str]);
+
+  // tsu ⇄ tu
+  let next = new Set();
+  variants.forEach((v) => {
+    next.add(v);
+    if (v.includes("tsu")) {
+      next.add(v.split("tsu").join("tu"));
+    } else if (v.includes("tu")) {
+      next.add(v.split("tu").join("tsu"));
+    }
+  });
+  variants = next;
+
+  // 長音（同じ母音の連続） ⇄ ハイフン
+  next = new Set();
+  const vowels = ["a", "i", "u", "e", "o"];
+  variants.forEach((v) => {
+    next.add(v);
+    vowels.forEach((vw) => {
+      const doubled = vw + vw;
+      if (v.includes(doubled)) {
+        next.add(v.split(doubled).join(vw + "-"));
+      }
+    });
+  });
+  variants = next;
+
+  return Array.from(variants);
+}
+
+// 各お題リストの romaji 配列に、上記ルールで生成した表記ゆれをすべて追加する
+function expandWordList(list) {
+  list.forEach((w) => {
+    const expanded = new Set();
+    w.romaji.forEach((r) => expandRomajiVariants(r).forEach((v) => expanded.add(v)));
+    w.romaji = Array.from(expanded);
+  });
+  return list;
+}
+
+[EASY_WORDS, NORMAL_WORDS, HARD_WORDS].forEach(expandWordList);
+
+// ---------- 難易度設定 ----------
+const DIFFICULTIES = {
+  easy: {
+    label: "かんたん",
+    words: EASY_WORDS,
+    correctHype: 5,
+    missPenalty: 3,
+  },
+  normal: {
+    label: "ふつう",
+    words: NORMAL_WORDS,
+    correctHype: 4,
+    missPenalty: 6,
+  },
+  hard: {
+    label: "むずかしい",
+    words: HARD_WORDS,
+    correctHype: 3,
+    missPenalty: 9,
+  },
+};
+
+// コンボ数に応じたスコア倍率
+const COMBO_TIERS = [
+  { min: 8, mult: 2.0 },
+  { min: 5, mult: 1.5 },
+  { min: 3, mult: 1.2 },
+  { min: 0, mult: 1.0 },
 ];
 
 const PENLIGHT_COLORS = ["--gold", "--pink", "--cyan"];
 const GAME_SECONDS = 60;
 const CROWD_SIZE = 63; // 9列 x 7段
+const BEST_SCORE_KEY = "karaokeTyping.bestScores";
+const MUTE_KEY = "karaokeTyping.muted";
+const DIFF_KEY = "karaokeTyping.difficulty";
 
 const el = {
   crowd: document.getElementById("crowd"),
   spotlight: document.getElementById("spotlight"),
   mic: document.getElementById("mic"),
+  muteBtn: document.getElementById("muteBtn"),
   scoreValue: document.getElementById("scoreValue"),
+  comboValue: document.getElementById("comboValue"),
   timeValue: document.getElementById("timeValue"),
   hypeFill: document.getElementById("hypeFill"),
+  hypeBanner: document.getElementById("hypeBanner"),
   promptKana: document.getElementById("promptKana"),
   promptWord: document.getElementById("promptWord"),
   promptRomaji: document.getElementById("promptRomaji"),
   startOverlay: document.getElementById("startOverlay"),
   startBtn: document.getElementById("startBtn"),
+  startBest: document.getElementById("startBest"),
+  diffSelect: document.getElementById("diffSelect"),
   resultOverlay: document.getElementById("resultOverlay"),
   resultRank: document.getElementById("resultRank"),
+  resultBest: document.getElementById("resultBest"),
   resultScore: document.getElementById("resultScore"),
   resultChars: document.getElementById("resultChars"),
   resultAcc: document.getElementById("resultAcc"),
@@ -62,9 +164,133 @@ const el = {
 };
 
 let state = null;
+let selectedDifficulty = "normal";
+
+/* =========================================================
+   ローカルストレージ関連（自己ベスト・ミュート・難易度）
+   ========================================================= */
+
+function safeGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (err) {
+    return null;
+  }
+}
+
+function safeSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (err) {
+    // プライベートブラウズ等でlocalStorageが使えない場合は無視
+  }
+}
+
+function loadBestScores() {
+  try {
+    return JSON.parse(safeGet(BEST_SCORE_KEY)) || {};
+  } catch (err) {
+    return {};
+  }
+}
+
+function getBestScore(diff) {
+  const scores = loadBestScores();
+  return scores[diff] || 0;
+}
+
+function saveBestScoreIfHigher(diff, score) {
+  const scores = loadBestScores();
+  const prevBest = scores[diff] || 0;
+  const isNew = score > prevBest;
+  if (isNew) {
+    scores[diff] = score;
+    safeSet(BEST_SCORE_KEY, JSON.stringify(scores));
+  }
+  return { isNew, best: isNew ? score : prevBest };
+}
+
+function refreshStartBest() {
+  const best = getBestScore(selectedDifficulty);
+  el.startBest.textContent = `自己ベスト（${DIFFICULTIES[selectedDifficulty].label}）：${best}`;
+}
+
+/* =========================================================
+   サウンド（Web Audio API / 追加ファイル不要）
+   ========================================================= */
+
+let audioCtx = null;
+let muted = safeGet(MUTE_KEY) === "1";
+
+function ensureAudio() {
+  if (!audioCtx) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) audioCtx = new AudioCtx();
+  }
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+}
+
+function playTone(freq, duration, type = "sine", peak = 0.15, delay = 0) {
+  if (muted || !audioCtx) return;
+  const t0 = audioCtx.currentTime + delay;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t0);
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(peak, t0 + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(t0);
+  osc.stop(t0 + duration + 0.02);
+}
+
+function sfxCorrect() {
+  playTone(880, 0.08, "sine", 0.12);
+}
+
+function sfxMiss() {
+  playTone(140, 0.16, "sawtooth", 0.14);
+}
+
+function sfxWordComplete() {
+  playTone(660, 0.1, "triangle", 0.14);
+  playTone(880, 0.12, "triangle", 0.14, 0.06);
+  playTone(1100, 0.16, "triangle", 0.14, 0.12);
+}
+
+function sfxHypeMax() {
+  playTone(523, 0.18, "triangle", 0.15);
+  playTone(659, 0.18, "triangle", 0.15, 0.05);
+  playTone(784, 0.18, "triangle", 0.15, 0.1);
+  playTone(1047, 0.3, "triangle", 0.16, 0.15);
+}
+
+function sfxTick() {
+  playTone(400, 0.05, "square", 0.06);
+}
+
+function updateMuteBtn() {
+  el.muteBtn.textContent = muted ? "🔇" : "🔊";
+  el.muteBtn.setAttribute("aria-pressed", String(muted));
+}
+
+el.muteBtn.addEventListener("click", () => {
+  muted = !muted;
+  safeSet(MUTE_KEY, muted ? "1" : "0");
+  updateMuteBtn();
+});
+updateMuteBtn();
+
+/* =========================================================
+   ゲーム本体
+   ========================================================= */
 
 function buildCrowd() {
   el.crowd.innerHTML = "";
+  el.crowd.classList.remove("wave");
   for (let i = 0; i < CROWD_SIZE; i++) {
     const p = document.createElement("div");
     p.className = "penlight";
@@ -73,38 +299,50 @@ function buildCrowd() {
 }
 
 function pickWord(excludeWord) {
+  const pool = DIFFICULTIES[state.difficulty].words;
   let candidate;
   do {
-    candidate = WORDS[Math.floor(Math.random() * WORDS.length)];
-  } while (WORDS.length > 1 && candidate === excludeWord);
+    candidate = pool[Math.floor(Math.random() * pool.length)];
+  } while (pool.length > 1 && candidate === excludeWord);
   return candidate;
 }
 
-function initState() {
+function initState(difficulty) {
   return {
     running: false,
+    difficulty,
     timeLeft: GAME_SECONDS,
     score: 0,
     correctChars: 0,
     missChars: 0,
     hype: 0,
+    hypeCelebrated: false,
+    combo: 0,
     current: null,
-    typed: "",
+    typed: "",       // ローマ字入力の進捗
+    typedKana: "",   // かな入力の進捗
     litCount: 0,
     timerId: null,
   };
 }
 
 function renderPrompt() {
-  const { current, typed } = state;
-  el.promptKana.textContent = current.kana;
+  const { current, typed, typedKana } = state;
   el.promptWord.textContent = current.word;
+
+  const kanaAnswer = current.kana;
+  const doneK = kanaAnswer.slice(0, typedKana.length);
+  const nextK = kanaAnswer.slice(typedKana.length, typedKana.length + 1);
+  const restK = kanaAnswer.slice(typedKana.length + 1);
+  el.promptKana.innerHTML =
+    `<span class="romaji-done">${doneK}</span>` +
+    `<span class="romaji-next">${nextK}</span>` +
+    `<span class="romaji-rest">${restK}</span>`;
 
   const answer = current.romaji[0];
   const done = answer.slice(0, typed.length);
   const next = answer.slice(typed.length, typed.length + 1);
   const rest = answer.slice(typed.length + 1);
-
   el.promptRomaji.innerHTML =
     `<span class="romaji-done">${done}</span>` +
     `<span class="romaji-next">${next}</span>` +
@@ -114,7 +352,13 @@ function renderPrompt() {
 function nextWord() {
   state.current = pickWord(state.current);
   state.typed = "";
+  state.typedKana = "";
   renderPrompt();
+}
+
+function comboMultiplier(combo) {
+  const tier = COMBO_TIERS.find((t) => combo >= t.min);
+  return tier ? tier.mult : 1.0;
 }
 
 function updateHud() {
@@ -123,6 +367,15 @@ function updateHud() {
   el.timeValue.classList.toggle("time-warn", state.timeLeft <= 10);
   el.hypeFill.style.width = `${state.hype}%`;
   el.hypeFill.classList.toggle("maxed", state.hype >= 100);
+
+  const mult = comboMultiplier(state.combo);
+  if (state.combo >= 3) {
+    el.comboValue.hidden = false;
+    el.comboValue.textContent = `combo ${state.combo} (x${mult})`;
+    el.comboValue.classList.toggle("boosted", mult > 1);
+  } else {
+    el.comboValue.hidden = true;
+  }
 }
 
 function lightNextPenlight() {
@@ -137,8 +390,7 @@ function lightNextPenlight() {
 
 function flashMiss() {
   el.mic.classList.remove("miss");
-  // reflow で再アニメーションさせる
-  void el.mic.offsetWidth;
+  void el.mic.offsetWidth; // reflow で再アニメーションさせる
   el.mic.classList.add("miss");
 }
 
@@ -146,6 +398,15 @@ function burstSpotlight() {
   el.spotlight.classList.remove("burst");
   void el.spotlight.offsetWidth;
   el.spotlight.classList.add("burst");
+}
+
+function celebrateHypeMax() {
+  el.crowd.classList.add("wave");
+  el.hypeBanner.classList.remove("show");
+  void el.hypeBanner.offsetWidth;
+  el.hypeBanner.classList.add("show");
+  sfxHypeMax();
+  setTimeout(() => el.crowd.classList.remove("wave"), 1400);
 }
 
 function isAnswerMatch(typed, romajiOptions) {
@@ -156,49 +417,101 @@ function isPrefixOfAny(typed, romajiOptions) {
   return romajiOptions.some((r) => r.startsWith(typed));
 }
 
-function handleKeydown(e) {
-  if (e.key.length !== 1 || !/^[a-zA-Z]$/.test(e.key)) return;
-  typeChar(e.key);
+function isRomajiChar(ch) {
+  return /^[a-zA-Z-]$/.test(ch);
 }
 
-function typeChar(rawKey) {
-  if (!state.running) return;
+function isHiraganaChar(ch) {
+  return /^[\u3041-\u309F\u30FC]$/.test(ch);
+}
 
-  const key = rawKey.toLowerCase();
+function onCorrectKeystroke() {
+  const cfg = DIFFICULTIES[state.difficulty];
+  const mult = comboMultiplier(state.combo);
+  state.correctChars += 1;
+  state.score += Math.round(10 * mult);
+  state.hype = Math.min(100, state.hype + cfg.correctHype);
+  lightNextPenlight();
+  sfxCorrect();
+
+  if (state.hype >= 100 && !state.hypeCelebrated) {
+    state.hypeCelebrated = true;
+    celebrateHypeMax();
+  }
+}
+
+function onMissKeystroke() {
+  const cfg = DIFFICULTIES[state.difficulty];
+  state.missChars += 1;
+  state.combo = 0;
+  state.hype = Math.max(0, state.hype - cfg.missPenalty);
+  if (state.hype < 100) state.hypeCelebrated = false;
+  flashMiss();
+  sfxMiss();
+}
+
+function onWordComplete() {
+  const mult = comboMultiplier(state.combo);
+  state.combo += 1;
+  state.score += Math.round(20 * mult);
+  burstSpotlight();
+  sfxWordComplete();
+  nextWord();
+}
+
+function handleKanaInput(rawChar) {
+  const attempt = state.typedKana + rawChar;
+  const kanaAnswer = state.current.kana;
+
+  if (kanaAnswer.startsWith(attempt)) {
+    state.typedKana = attempt;
+    onCorrectKeystroke();
+    renderPrompt();
+    updateHud();
+    if (attempt === kanaAnswer) onWordComplete();
+  } else {
+    onMissKeystroke();
+    updateHud();
+  }
+}
+
+function handleRomajiInput(key) {
   const attempt = state.typed + key;
   const { romaji } = state.current;
 
   if (isPrefixOfAny(attempt, romaji)) {
-    // 正しい打鍵
     state.typed = attempt;
-    state.correctChars += 1;
-    state.score += 10;
-    state.hype = Math.min(100, state.hype + 4);
-    lightNextPenlight();
+    onCorrectKeystroke();
     renderPrompt();
     updateHud();
-
-    if (isAnswerMatch(state.typed, romaji)) {
-      // 単語を打ち切った
-      state.score += 20;
-      burstSpotlight();
-      nextWord();
-    }
+    if (isAnswerMatch(state.typed, romaji)) onWordComplete();
   } else {
-    // ミス打鍵
-    state.missChars += 1;
-    state.hype = Math.max(0, state.hype - 6);
-    flashMiss();
+    onMissKeystroke();
     updateHud();
   }
+}
+
+function handleKeydown(e) {
+  if (e.key.length !== 1 || !isRomajiChar(e.key)) return;
+  typeChar(e.key);
+}
+
+function typeChar(rawKey) {
+  if (!state || !state.running) return;
+
+  if (isHiraganaChar(rawKey)) {
+    handleKanaInput(rawKey);
+  } else if (isRomajiChar(rawKey)) {
+    handleRomajiInput(rawKey.toLowerCase());
+  }
+  // それ以外の文字（絵文字、記号、変換候補の確定前文字など）は無視
 }
 
 function tick() {
   state.timeLeft -= 1;
   updateHud();
-  if (state.timeLeft <= 0) {
-    endGame();
-  }
+  if (state.timeLeft <= 3 && state.timeLeft > 0) sfxTick();
+  if (state.timeLeft <= 0) endGame();
 }
 
 function rankFor(score) {
@@ -210,13 +523,15 @@ function rankFor(score) {
 }
 
 function startGame() {
-  state = initState();
+  ensureAudio();
+  state = initState(selectedDifficulty);
   state.running = true;
   buildCrowd();
   nextWord();
   updateHud();
   el.startOverlay.hidden = true;
   el.resultOverlay.hidden = true;
+  el.hypeBanner.classList.remove("show");
   state.timerId = setInterval(tick, 1000);
 
   // 「端末のキーボード」モードならゲーム開始と同時にフォーカスして開く
@@ -231,19 +546,48 @@ function endGame() {
 
   const totalChars = state.correctChars + state.missChars;
   const acc = totalChars === 0 ? 0 : Math.round((state.correctChars / totalChars) * 100);
+  const { isNew, best } = saveBestScoreIfHigher(state.difficulty, state.score);
 
   el.resultRank.textContent = rankFor(state.score);
   el.resultScore.textContent = state.score;
   el.resultChars.textContent = state.correctChars;
   el.resultAcc.textContent = `${acc}%`;
+  el.resultBest.innerHTML = isNew
+    ? `<span class="is-new">自己ベスト更新！ ${best}</span>`
+    : `自己ベスト（${DIFFICULTIES[state.difficulty].label}）：${best}`;
   el.resultOverlay.hidden = false;
+
+  refreshStartBest();
 }
 
 el.startBtn.addEventListener("click", startGame);
 el.retryBtn.addEventListener("click", startGame);
 window.addEventListener("keydown", handleKeydown);
 
-// ---------- 入力方法の切り替え（専用キーボード / 端末のキーボード） ----------
+/* ---------- 難易度選択 ---------- */
+if (el.diffSelect) {
+  el.diffSelect.querySelectorAll(".diff-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedDifficulty = btn.dataset.diff;
+      el.diffSelect.querySelectorAll(".diff-btn").forEach((b) => {
+        b.classList.toggle("active", b === btn);
+      });
+      safeSet(DIFF_KEY, selectedDifficulty);
+      refreshStartBest();
+    });
+  });
+
+  const savedDiff = safeGet(DIFF_KEY);
+  if (savedDiff && DIFFICULTIES[savedDiff]) {
+    selectedDifficulty = savedDiff;
+    el.diffSelect.querySelectorAll(".diff-btn").forEach((b) => {
+      b.classList.toggle("active", b.dataset.diff === savedDiff);
+    });
+  }
+}
+refreshStartBest();
+
+/* ---------- 入力方法の切り替え（専用キーボード / 端末のキーボード） ---------- */
 const KBD_MODE_KEY = "karaokeTyping.kbdMode";
 const vkb = document.getElementById("vkb");
 const nativeInput = document.getElementById("nativeInput");
@@ -258,11 +602,7 @@ function setKbdMode(mode) {
     btn.classList.toggle("active", btn.dataset.mode === mode);
   });
 
-  try {
-    localStorage.setItem(KBD_MODE_KEY, mode);
-  } catch (err) {
-    // プライベートブラウズ等でlocalStorageが使えない場合は無視
-  }
+  safeSet(KBD_MODE_KEY, mode);
 
   if (isNative && state && state.running) {
     nativeInput.focus();
@@ -273,33 +613,24 @@ if (kbdToggle) {
   kbdToggle.querySelectorAll(".kbd-toggle-btn").forEach((btn) => {
     btn.addEventListener("click", () => setKbdMode(btn.dataset.mode));
   });
-
-  let savedMode = "custom";
-  try {
-    savedMode = localStorage.getItem(KBD_MODE_KEY) || "custom";
-  } catch (err) {
-    // 無視
-  }
-  setKbdMode(savedMode);
+  setKbdMode(safeGet(KBD_MODE_KEY) || "custom");
 }
 
-// 端末純正キーボードからの入力（1文字ずつ拾ってすぐ入力欄をクリアする）
+// 端末純正キーボードからの入力（ローマ字・かなの両方に対応。1文字ずつ拾ってすぐ入力欄をクリアする）
 if (nativeInput) {
   nativeInput.addEventListener("input", () => {
-    const chars = nativeInput.value.match(/[a-zA-Z]/g) || [];
+    const chars = nativeInput.value.match(/[a-zA-Z\u3041-\u309F\u30FC-]/g) || [];
     chars.forEach((ch) => typeChar(ch));
     nativeInput.value = "";
   });
 }
 
-// ---------- 専用オンスクリーンキーボード（タップ操作） ----------
+/* ---------- 専用オンスクリーンキーボード（タップ操作） ---------- */
 if (vkb) {
   vkb.querySelectorAll(".vkb-key").forEach((btn) => {
     const key = btn.dataset.key;
 
-    btn.addEventListener("pointerdown", () => {
-      btn.classList.add("pressed");
-    });
+    btn.addEventListener("pointerdown", () => btn.classList.add("pressed"));
     const release = () => btn.classList.remove("pressed");
     btn.addEventListener("pointerup", release);
     btn.addEventListener("pointerleave", release);
