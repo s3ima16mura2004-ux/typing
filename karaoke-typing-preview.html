@@ -514,7 +514,7 @@ body{
     type="text"
     id="nativeInput"
     class="native-input"
-    placeholder="ここをタップしてローマ字で入力"
+    placeholder="ここをタップしてローマ字 or かなで入力"
     autocomplete="off"
     autocapitalize="off"
     autocorrect="off"
@@ -617,17 +617,28 @@ function initState() {
     missChars: 0,
     hype: 0,
     current: null,
-    typed: "",
+    typed: "",       // ローマ字入力の進捗
+    typedKana: "",   // かな入力の進捗
     litCount: 0,
     timerId: null,
   };
 }
 
 function renderPrompt() {
-  const { current, typed } = state;
-  el.promptKana.textContent = current.kana;
+  const { current, typed, typedKana } = state;
   el.promptWord.textContent = current.word;
 
+  // かな入力の進捗表示
+  const kanaAnswer = current.kana;
+  const doneK = kanaAnswer.slice(0, typedKana.length);
+  const nextK = kanaAnswer.slice(typedKana.length, typedKana.length + 1);
+  const restK = kanaAnswer.slice(typedKana.length + 1);
+  el.promptKana.innerHTML =
+    `<span class="romaji-done">${doneK}</span>` +
+    `<span class="romaji-next">${nextK}</span>` +
+    `<span class="romaji-rest">${restK}</span>`;
+
+  // ローマ字入力の進捗表示
   const answer = current.romaji[0];
   const done = answer.slice(0, typed.length);
   const next = answer.slice(typed.length, typed.length + 1);
@@ -642,6 +653,7 @@ function renderPrompt() {
 function nextWord() {
   state.current = pickWord(state.current);
   state.typed = "";
+  state.typedKana = "";
   renderPrompt();
 }
 
@@ -684,6 +696,67 @@ function isPrefixOfAny(typed, romajiOptions) {
   return romajiOptions.some((r) => r.startsWith(typed));
 }
 
+function isHiraganaChar(ch) {
+  return /^[\u3041-\u309F\u30FC]$/.test(ch);
+}
+
+function onCorrectKeystroke() {
+  state.correctChars += 1;
+  state.score += 10;
+  state.hype = Math.min(100, state.hype + 4);
+  lightNextPenlight();
+}
+
+function onMissKeystroke() {
+  state.missChars += 1;
+  state.hype = Math.max(0, state.hype - 6);
+  flashMiss();
+}
+
+function onWordComplete() {
+  state.score += 20;
+  burstSpotlight();
+  nextWord();
+}
+
+function handleKanaInput(rawChar) {
+  const attempt = state.typedKana + rawChar;
+  const kanaAnswer = state.current.kana;
+
+  if (kanaAnswer.startsWith(attempt)) {
+    state.typedKana = attempt;
+    onCorrectKeystroke();
+    renderPrompt();
+    updateHud();
+
+    if (attempt === kanaAnswer) {
+      onWordComplete();
+    }
+  } else {
+    onMissKeystroke();
+    updateHud();
+  }
+}
+
+function handleRomajiInput(key) {
+  const attempt = state.typed + key;
+  const { romaji } = state.current;
+
+  if (isPrefixOfAny(attempt, romaji)) {
+    state.typed = attempt;
+    onCorrectKeystroke();
+    renderPrompt();
+    updateHud();
+
+    if (isAnswerMatch(state.typed, romaji)) {
+      onWordComplete();
+    }
+  } else {
+    onMissKeystroke();
+    updateHud();
+  }
+}
+
 function handleKeydown(e) {
   if (e.key.length !== 1 || !/^[a-zA-Z]$/.test(e.key)) return;
   typeChar(e.key);
@@ -692,33 +765,12 @@ function handleKeydown(e) {
 function typeChar(rawKey) {
   if (!state.running) return;
 
-  const key = rawKey.toLowerCase();
-  const attempt = state.typed + key;
-  const { romaji } = state.current;
-
-  if (isPrefixOfAny(attempt, romaji)) {
-    // 正しい打鍵
-    state.typed = attempt;
-    state.correctChars += 1;
-    state.score += 10;
-    state.hype = Math.min(100, state.hype + 4);
-    lightNextPenlight();
-    renderPrompt();
-    updateHud();
-
-    if (isAnswerMatch(state.typed, romaji)) {
-      // 単語を打ち切った
-      state.score += 20;
-      burstSpotlight();
-      nextWord();
-    }
-  } else {
-    // ミス打鍵
-    state.missChars += 1;
-    state.hype = Math.max(0, state.hype - 6);
-    flashMiss();
-    updateHud();
+  if (isHiraganaChar(rawKey)) {
+    handleKanaInput(rawKey);
+  } else if (/^[a-zA-Z]$/.test(rawKey)) {
+    handleRomajiInput(rawKey.toLowerCase());
   }
+  // それ以外の文字（絵文字、記号、変換候補の確定前文字など）は無視
 }
 
 function tick() {
@@ -811,10 +863,10 @@ if (kbdToggle) {
   setKbdMode(savedMode);
 }
 
-// 端末純正キーボードからの入力（1文字ずつ拾ってすぐ入力欄をクリアする）
+// 端末純正キーボードからの入力（ローマ字・かなの両方に対応。1文字ずつ拾ってすぐ入力欄をクリアする）
 if (nativeInput) {
   nativeInput.addEventListener("input", () => {
-    const chars = nativeInput.value.match(/[a-zA-Z]/g) || [];
+    const chars = nativeInput.value.match(/[a-zA-Z\u3041-\u309F\u30FC]/g) || [];
     chars.forEach((ch) => typeChar(ch));
     nativeInput.value = "";
   });

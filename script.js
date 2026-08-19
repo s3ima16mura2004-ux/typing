@@ -6,7 +6,7 @@
 // お題リスト（表示語 / ふりがな / 正解ローマ字 / 別解ローマ字）
 const WORDS = [
   { word: "夢",       kana: "ゆめ",         romaji: ["yume"] },
-  { word: "情熱",     kana: "じょうねつ",   romaji: ["jounetsu", "zyounetsu"] },
+  { word: "情熱",     kana: "じょうねつ",   romaji: ["jounetsu", "zyounetsu", "jounetu"] },
   { word: "声援",     kana: "せいえん",     romaji: ["seien"] },
   { word: "拍手",     kana: "はくしゅ",     romaji: ["hakushu", "hakusyu"] },
   { word: "叫べ",     kana: "さけべ",       romaji: ["sakebe"] },
@@ -15,7 +15,7 @@ const WORDS = [
   { word: "運命",     kana: "うんめい",     romaji: ["unmei"] },
   { word: "青春",     kana: "せいしゅん",   romaji: ["seishun", "seisyun"] },
   { word: "太陽",     kana: "たいよう",     romaji: ["taiyou"] },
-  { word: "明日",     kana: "あした",       romaji: ["ashita"] },
+  { word: "明日",     kana: "あした",       romaji: ["ashita", "asita"] },
   { word: "希望",     kana: "きぼう",       romaji: ["kibou"] },
   { word: "旅立ち",   kana: "たびだち",     romaji: ["tabidachi", "tabidati"] },
   { word: "主人公",   kana: "しゅじんこう", romaji: ["shujinkou", "syuzinkou"] },
@@ -25,7 +25,7 @@ const WORDS = [
   { word: "喝采",     kana: "かっさい",     romaji: ["kassai"] },
   { word: "全力",     kana: "ぜんりょく",   romaji: ["zenryoku"] },
   { word: "光",       kana: "ひかり",       romaji: ["hikari"] },
-  { word: "アンコール", kana: "あんこーる", romaji: ["ankoru", "ankooru"] },
+  { word: "アンコール", kana: "あんこーる", romaji: ["ankoru", "ankooru","anko-ru"] },
   { word: "一期一会", kana: "いちごいちえ", romaji: ["ichigoichie", "itigoitie"] },
   { word: "本気",     kana: "ほんき",       romaji: ["honki"] },
   { word: "絆",       kana: "きずな",       romaji: ["kizuna"] },
