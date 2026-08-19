@@ -64,7 +64,7 @@
     <h2 class="overlay-title">MIC CHECK</h2>
     <p class="overlay-text">表示された単語をローマ字・またはかなで打ち切って、<br>客席のペンライトを灯していこう。<br>制限時間は60秒のスコアアタック。</p>
 
-    <div class="diff-select" id="diffSelect" role="group" aria-label="難易度選択">
+    <div class="diff-grid" id="diffSelect" role="group" aria-label="難易度選択">
       <button type="button" class="diff-btn" data-diff="easy">
         <span class="diff-btn-title">かんたん</span>
         <span class="diff-btn-desc">短い単語中心</span>
@@ -125,13 +125,21 @@
 <!-- タッチ端末用の入力エリア（物理キーボードがある環境では自動的に隠れる） -->
 <div class="kbd-area" id="kbdArea" aria-hidden="true">
 
+  <!-- キーボード表示中も常に見える、現在のお題のミニ表示（スマホでキーボードが開いて本体の表示が隠れても見えるように） -->
+  <div class="mini-prompter" id="miniPrompter">
+    <span class="mini-prompter-kana" id="miniPromptKana">&nbsp;</span>
+    <span class="mini-prompter-word" id="miniPromptWord">-</span>
+    <span class="mini-prompter-romaji" id="miniPromptRomaji">&nbsp;</span>
+  </div>
+
   <!-- キーボード切り替えトグル -->
   <div class="kbd-toggle" id="kbdToggle" role="group" aria-label="入力方法の切り替え">
-    <button type="button" class="kbd-toggle-btn active" data-mode="custom">専用キーボード</button>
+    <button type="button" class="kbd-toggle-btn active" data-mode="custom">ローマ字</button>
+    <button type="button" class="kbd-toggle-btn" data-mode="flick">かな</button>
     <button type="button" class="kbd-toggle-btn" data-mode="native">端末のキーボード</button>
   </div>
 
-  <!-- 専用オンスクリーンキーボード -->
+  <!-- 専用オンスクリーンキーボード（ローマ字） -->
   <div class="vkb" id="vkb">
     <div class="vkb-row">
       <button type="button" class="vkb-key" data-key="q">q</button>
@@ -168,6 +176,26 @@
     </div>
   </div>
 
+  <!-- 専用オンスクリーンキーボード（かな・端末のフリック入力と同じ配置） -->
+  <div class="flick-kb" id="flickKb" hidden>
+    <div class="flick-preview" id="flickPreview" hidden></div>
+    <div class="flick-grid">
+      <button type="button" class="flick-key" data-row="あ">あ</button>
+      <button type="button" class="flick-key" data-row="か">か</button>
+      <button type="button" class="flick-key" data-row="さ">さ</button>
+      <button type="button" class="flick-key" data-row="た">た</button>
+      <button type="button" class="flick-key" data-row="な">な</button>
+      <button type="button" class="flick-key" data-row="は">は</button>
+      <button type="button" class="flick-key" data-row="ま">ま</button>
+      <button type="button" class="flick-key" data-row="や">や</button>
+      <button type="button" class="flick-key" data-row="ら">ら</button>
+      <button type="button" class="flick-key flick-key--mod" id="flickModKey">゛゜小</button>
+      <button type="button" class="flick-key" data-row="わ">わ</button>
+      <button type="button" class="flick-key" id="flickLongKey">ー</button>
+    </div>
+  </div>
+
+  <p class="kbd-hint">※ かなキーボードは指を離さず上下左右にフリックすると母音が切り替わります（上:う　左:い　右:え　下:お／「わ」のみ 左:を　上:ん　右:ー）</p>
   <p class="kbd-hint">※「つ」は tu、長音は ー（ハイフン）でも入力できます</p>
 
   <!-- 端末純正キーボード用の入力欄 -->

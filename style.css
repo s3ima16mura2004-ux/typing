@@ -371,10 +371,9 @@ body{
 }
 
 /* ---------- 難易度選択 ---------- */
-.diff-select{
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+.diff-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 16px;
 }
@@ -383,13 +382,15 @@ body{
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 3px;
-  min-width: 74px;
+  min-width: 0;
+  width: 100%;
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 12px;
   background: var(--bg-panel);
   color: var(--ink-dim);
-  padding: 9px 10px;
+  padding: 10px 8px;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
@@ -397,12 +398,18 @@ body{
 .diff-btn-title{
   font-family: var(--font-body);
   font-weight: 700;
-  font-size: 14px;
+  font-size: clamp(12px, 3.4vw, 14px);
+  white-space: nowrap;
 }
 
 .diff-btn-desc{
-  font-size: 10px;
+  font-size: clamp(9px, 2.6vw, 10px);
   opacity: 0.8;
+  white-space: nowrap;
+}
+
+@media (min-width: 460px){
+  .diff-grid{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 .diff-btn.active{
@@ -490,11 +497,49 @@ body{
   user-select: none;
 }
 
+/* キーボード表示中も常に見えるミニ表示（スティッキーで画面上部に固定） */
+.mini-prompter{
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 12px;
+  background: rgba(8, 6, 15, 0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+}
+
+.mini-prompter-kana{
+  font-size: 12px;
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+}
+
+.mini-prompter-word{
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(20px, 6vw, 26px);
+  color: var(--ink);
+  letter-spacing: 0.03em;
+}
+
+.mini-prompter-romaji{
+  font-family: var(--font-mono);
+  font-size: clamp(14px, 4vw, 17px);
+  letter-spacing: 0.06em;
+}
+
 /* キーボード切り替えトグル */
 .kbd-toggle{
   display: flex;
   gap: 6px;
   align-self: center;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .kbd-toggle-btn{
@@ -506,7 +551,7 @@ body{
   background: var(--bg-panel);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 999px;
-  padding: 7px 16px;
+  padding: 7px 14px;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
@@ -520,6 +565,68 @@ body{
 .kbd-toggle-btn:focus-visible{
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
+}
+
+/* ---------- かなキーボード（端末のフリック入力と同じ3x4配置） ---------- */
+.flick-kb[hidden]{ display: none; }
+
+.flick-kb{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.flick-preview{
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 26px;
+  color: var(--gold);
+  background: var(--bg-panel);
+  border: 1px solid rgba(255,209,102,0.4);
+  border-radius: 10px;
+  padding: 4px 18px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.flick-preview[hidden]{ display: none; }
+
+.flick-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 84px));
+  gap: 7px;
+  width: 100%;
+  max-width: 300px;
+  justify-content: center;
+}
+
+.flick-key{
+  aspect-ratio: 1 / 1;
+  border: none;
+  border-radius: 10px;
+  background: var(--bg-panel);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 700;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.4);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s ease, transform 0.1s ease;
+}
+
+.flick-key:active,
+.flick-key.pressed{
+  background: var(--gold);
+  color: var(--bg-deep);
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+
+.flick-key--mod{
+  font-size: 13px;
+  color: var(--cyan);
 }
 
 /* 専用オンスクリーンキーボード */

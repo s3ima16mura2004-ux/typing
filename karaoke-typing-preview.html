@@ -381,10 +381,9 @@ body{
 }
 
 /* ---------- 難易度選択 ---------- */
-.diff-select{
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+.diff-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 16px;
 }
@@ -393,13 +392,15 @@ body{
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 3px;
-  min-width: 74px;
+  min-width: 0;
+  width: 100%;
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 12px;
   background: var(--bg-panel);
   color: var(--ink-dim);
-  padding: 9px 10px;
+  padding: 10px 8px;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
@@ -407,12 +408,18 @@ body{
 .diff-btn-title{
   font-family: var(--font-body);
   font-weight: 700;
-  font-size: 14px;
+  font-size: clamp(12px, 3.4vw, 14px);
+  white-space: nowrap;
 }
 
 .diff-btn-desc{
-  font-size: 10px;
+  font-size: clamp(9px, 2.6vw, 10px);
   opacity: 0.8;
+  white-space: nowrap;
+}
+
+@media (min-width: 460px){
+  .diff-grid{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 .diff-btn.active{
@@ -500,11 +507,49 @@ body{
   user-select: none;
 }
 
+/* キーボード表示中も常に見えるミニ表示（スティッキーで画面上部に固定） */
+.mini-prompter{
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 12px;
+  background: rgba(8, 6, 15, 0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+}
+
+.mini-prompter-kana{
+  font-size: 12px;
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+}
+
+.mini-prompter-word{
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(20px, 6vw, 26px);
+  color: var(--ink);
+  letter-spacing: 0.03em;
+}
+
+.mini-prompter-romaji{
+  font-family: var(--font-mono);
+  font-size: clamp(14px, 4vw, 17px);
+  letter-spacing: 0.06em;
+}
+
 /* キーボード切り替えトグル */
 .kbd-toggle{
   display: flex;
   gap: 6px;
   align-self: center;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .kbd-toggle-btn{
@@ -516,7 +561,7 @@ body{
   background: var(--bg-panel);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 999px;
-  padding: 7px 16px;
+  padding: 7px 14px;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
@@ -530,6 +575,68 @@ body{
 .kbd-toggle-btn:focus-visible{
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
+}
+
+/* ---------- かなキーボード（端末のフリック入力と同じ3x4配置） ---------- */
+.flick-kb[hidden]{ display: none; }
+
+.flick-kb{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.flick-preview{
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 26px;
+  color: var(--gold);
+  background: var(--bg-panel);
+  border: 1px solid rgba(255,209,102,0.4);
+  border-radius: 10px;
+  padding: 4px 18px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.flick-preview[hidden]{ display: none; }
+
+.flick-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 84px));
+  gap: 7px;
+  width: 100%;
+  max-width: 300px;
+  justify-content: center;
+}
+
+.flick-key{
+  aspect-ratio: 1 / 1;
+  border: none;
+  border-radius: 10px;
+  background: var(--bg-panel);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 700;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.4);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s ease, transform 0.1s ease;
+}
+
+.flick-key:active,
+.flick-key.pressed{
+  background: var(--gold);
+  color: var(--bg-deep);
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+
+.flick-key--mod{
+  font-size: 13px;
+  color: var(--cyan);
 }
 
 /* 専用オンスクリーンキーボード */
@@ -673,7 +780,7 @@ body{
     <h2 class="overlay-title">MIC CHECK</h2>
     <p class="overlay-text">表示された単語をローマ字・またはかなで打ち切って、<br>客席のペンライトを灯していこう。<br>制限時間は60秒のスコアアタック。</p>
 
-    <div class="diff-select" id="diffSelect" role="group" aria-label="難易度選択">
+    <div class="diff-grid" id="diffSelect" role="group" aria-label="難易度選択">
       <button type="button" class="diff-btn" data-diff="easy">
         <span class="diff-btn-title">かんたん</span>
         <span class="diff-btn-desc">短い単語中心</span>
@@ -734,13 +841,21 @@ body{
 <!-- タッチ端末用の入力エリア（物理キーボードがある環境では自動的に隠れる） -->
 <div class="kbd-area" id="kbdArea" aria-hidden="true">
 
+  <!-- キーボード表示中も常に見える、現在のお題のミニ表示（スマホでキーボードが開いて本体の表示が隠れても見えるように） -->
+  <div class="mini-prompter" id="miniPrompter">
+    <span class="mini-prompter-kana" id="miniPromptKana">&nbsp;</span>
+    <span class="mini-prompter-word" id="miniPromptWord">-</span>
+    <span class="mini-prompter-romaji" id="miniPromptRomaji">&nbsp;</span>
+  </div>
+
   <!-- キーボード切り替えトグル -->
   <div class="kbd-toggle" id="kbdToggle" role="group" aria-label="入力方法の切り替え">
-    <button type="button" class="kbd-toggle-btn active" data-mode="custom">専用キーボード</button>
+    <button type="button" class="kbd-toggle-btn active" data-mode="custom">ローマ字</button>
+    <button type="button" class="kbd-toggle-btn" data-mode="flick">かな</button>
     <button type="button" class="kbd-toggle-btn" data-mode="native">端末のキーボード</button>
   </div>
 
-  <!-- 専用オンスクリーンキーボード -->
+  <!-- 専用オンスクリーンキーボード（ローマ字） -->
   <div class="vkb" id="vkb">
     <div class="vkb-row">
       <button type="button" class="vkb-key" data-key="q">q</button>
@@ -777,6 +892,26 @@ body{
     </div>
   </div>
 
+  <!-- 専用オンスクリーンキーボード（かな・端末のフリック入力と同じ配置） -->
+  <div class="flick-kb" id="flickKb" hidden>
+    <div class="flick-preview" id="flickPreview" hidden></div>
+    <div class="flick-grid">
+      <button type="button" class="flick-key" data-row="あ">あ</button>
+      <button type="button" class="flick-key" data-row="か">か</button>
+      <button type="button" class="flick-key" data-row="さ">さ</button>
+      <button type="button" class="flick-key" data-row="た">た</button>
+      <button type="button" class="flick-key" data-row="な">な</button>
+      <button type="button" class="flick-key" data-row="は">は</button>
+      <button type="button" class="flick-key" data-row="ま">ま</button>
+      <button type="button" class="flick-key" data-row="や">や</button>
+      <button type="button" class="flick-key" data-row="ら">ら</button>
+      <button type="button" class="flick-key flick-key--mod" id="flickModKey">゛゜小</button>
+      <button type="button" class="flick-key" data-row="わ">わ</button>
+      <button type="button" class="flick-key" id="flickLongKey">ー</button>
+    </div>
+  </div>
+
+  <p class="kbd-hint">※ かなキーボードは指を離さず上下左右にフリックすると母音が切り替わります（上:う　左:い　右:え　下:お／「わ」のみ 左:を　上:ん　右:ー）</p>
   <p class="kbd-hint">※「つ」は tu、長音は ー（ハイフン）でも入力できます</p>
 
   <!-- 端末純正キーボード用の入力欄 -->
@@ -1072,6 +1207,9 @@ const el = {
   promptKana: document.getElementById("promptKana"),
   promptWord: document.getElementById("promptWord"),
   promptRomaji: document.getElementById("promptRomaji"),
+  miniPromptKana: document.getElementById("miniPromptKana"),
+  miniPromptWord: document.getElementById("miniPromptWord"),
+  miniPromptRomaji: document.getElementById("miniPromptRomaji"),
   startOverlay: document.getElementById("startOverlay"),
   startBtn: document.getElementById("startBtn"),
   startBest: document.getElementById("startBest"),
@@ -1269,24 +1407,29 @@ function initState(difficulty, practice) {
 function renderPrompt() {
   const { current, typed, typedKana } = state;
   el.promptWord.textContent = current.word;
+  el.miniPromptWord.textContent = current.word;
 
   const kanaAnswer = current.kana;
   const doneK = kanaAnswer.slice(0, typedKana.length);
   const nextK = kanaAnswer.slice(typedKana.length, typedKana.length + 1);
   const restK = kanaAnswer.slice(typedKana.length + 1);
-  el.promptKana.innerHTML =
+  const kanaHtml =
     `<span class="romaji-done">${doneK}</span>` +
     `<span class="romaji-next">${nextK}</span>` +
     `<span class="romaji-rest">${restK}</span>`;
+  el.promptKana.innerHTML = kanaHtml;
+  el.miniPromptKana.innerHTML = kanaHtml;
 
   const answer = current.romaji[0];
   const done = answer.slice(0, typed.length);
   const next = answer.slice(typed.length, typed.length + 1);
   const rest = answer.slice(typed.length + 1);
-  el.promptRomaji.innerHTML =
+  const romajiHtml =
     `<span class="romaji-done">${done}</span>` +
     `<span class="romaji-next">${next}</span>` +
     `<span class="romaji-rest">${rest}</span>`;
+  el.promptRomaji.innerHTML = romajiHtml;
+  el.miniPromptRomaji.innerHTML = romajiHtml;
 }
 
 function nextWord() {
@@ -1724,16 +1867,22 @@ if (el.shareBtn) {
   el.shareBtn.addEventListener("click", shareResult);
 }
 
-/* ---------- 入力方法の切り替え（専用キーボード / 端末のキーボード） ---------- */
+/* ---------- 入力方法の切り替え（ローマ字 / かな / 端末のキーボード） ---------- */
 const KBD_MODE_KEY = "karaokeTyping.kbdMode";
 const vkb = document.getElementById("vkb");
+const flickKb = document.getElementById("flickKb");
 const nativeInput = document.getElementById("nativeInput");
 const kbdToggle = document.getElementById("kbdToggle");
+let flickCancelPending = null; // かなキーボードが自身の入力途中状態を破棄するための関数（後で登録される）
 
 function setKbdMode(mode) {
-  const isNative = mode === "native";
-  vkb.hidden = isNative;
-  nativeInput.hidden = !isNative;
+  vkb.hidden = mode !== "custom";
+  flickKb.hidden = mode !== "flick";
+  nativeInput.hidden = mode !== "native";
+
+  if (mode !== "flick" && flickCancelPending) {
+    flickCancelPending();
+  }
 
   kbdToggle.querySelectorAll(".kbd-toggle-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.mode === mode);
@@ -1741,7 +1890,7 @@ function setKbdMode(mode) {
 
   safeSet(KBD_MODE_KEY, mode);
 
-  if (isNative && state && state.running) {
+  if (mode === "native" && state && state.running) {
     nativeInput.focus();
   }
 }
@@ -1781,7 +1930,7 @@ if (nativeInput) {
   });
 }
 
-/* ---------- 専用オンスクリーンキーボード（タップ操作） ---------- */
+/* ---------- 専用オンスクリーンキーボード（ローマ字・タップ操作） ---------- */
 if (vkb) {
   vkb.querySelectorAll(".vkb-key").forEach((btn) => {
     const key = btn.dataset.key;
@@ -1795,6 +1944,194 @@ if (vkb) {
       e.preventDefault();
       typeChar(key);
     });
+  });
+}
+
+/* ---------- 専用オンスクリーンキーボード（かな・端末のフリック入力と同じ形） ----------
+   端末のフリック配列（あ・か・さ / た・な・は / ま・や・ら / 小・わ・ー）を再現。
+   同じキーを連続タップすると母音が進み（あ→い→う→え→お）、他のキーを押すかタイムアウトすると確定する。
+   「゛゜小」キーは、今入力中の文字を濁点・半濁点・小文字に順番に変換する。 */
+const GYOU_CYCLES = {
+  "あ": ["あ", "い", "う", "え", "お"],
+  "か": ["か", "き", "く", "け", "こ"],
+  "さ": ["さ", "し", "す", "せ", "そ"],
+  "た": ["た", "ち", "つ", "て", "と"],
+  "な": ["な", "に", "ぬ", "ね", "の"],
+  "は": ["は", "ひ", "ふ", "へ", "ほ"],
+  "ま": ["ま", "み", "む", "め", "も"],
+  "や": ["や", "ゆ", "よ"],
+  "ら": ["ら", "り", "る", "れ", "ろ"],
+  "わ": ["わ", "を", "ん"],
+};
+
+const KANA_FORMS = {
+  "あ": ["あ", "ぁ"], "い": ["い", "ぃ"], "う": ["う", "ぅ"], "え": ["え", "ぇ"], "お": ["お", "ぉ"],
+  "か": ["か", "が"], "き": ["き", "ぎ"], "く": ["く", "ぐ"], "け": ["け", "げ"], "こ": ["こ", "ご"],
+  "さ": ["さ", "ざ"], "し": ["し", "じ"], "す": ["す", "ず"], "せ": ["せ", "ぜ"], "そ": ["そ", "ぞ"],
+  "た": ["た", "だ"], "ち": ["ち", "ぢ"], "つ": ["つ", "づ", "っ"], "て": ["て", "で"], "と": ["と", "ど"],
+  "な": ["な"], "に": ["に"], "ぬ": ["ぬ"], "ね": ["ね"], "の": ["の"],
+  "は": ["は", "ば", "ぱ"], "ひ": ["ひ", "び", "ぴ"], "ふ": ["ふ", "ぶ", "ぷ"], "へ": ["へ", "べ", "ぺ"], "ほ": ["ほ", "ぼ", "ぽ"],
+  "ま": ["ま"], "み": ["み"], "む": ["む"], "め": ["め"], "も": ["も"],
+  "や": ["や", "ゃ"], "ゆ": ["ゆ", "ゅ"], "よ": ["よ", "ょ"],
+  "ら": ["ら"], "り": ["り"], "る": ["る"], "れ": ["れ"], "ろ": ["ろ"],
+  "わ": ["わ", "ゎ"], "を": ["を"], "ん": ["ん"],
+};
+
+// 方向フリック → 母音のマッピング（実機のフリック配列と同じ: 上=う 左=い 右=え 下=お、動かさなければ基本母音）
+const FLICK_DIR_MAP = {
+  "あ": { tap: 0, left: 1, up: 2, right: 3, down: 4 },
+  "か": { tap: 0, left: 1, up: 2, right: 3, down: 4 },
+  "さ": { tap: 0, left: 1, up: 2, right: 3, down: 4 },
+  "た": { tap: 0, left: 1, up: 2, right: 3, down: 4 },
+  "な": { tap: 0, left: 1, up: 2, right: 3, down: 4 },
+  "は": { tap: 0, left: 1, up: 2, right: 3, down: 4 },
+  "ま": { tap: 0, left: 1, up: 2, right: 3, down: 4 },
+  "ら": { tap: 0, left: 1, up: 2, right: 3, down: 4 },
+  "や": { tap: 0, up: 1, down: 2 },   // や(tap) / ゆ(上) / よ(下)
+  "わ": { tap: 0, left: 1, up: 2, right: "long" }, // わ(tap) / を(左) / ん(上) / ー(右)
+};
+
+const FLICK_COMMIT_DELAY = 750;
+const FLICK_DISTANCE_THRESHOLD = 20; // これ以上動いたらフリックと判定する（px）
+
+if (flickKb) {
+  const flickPreview = document.getElementById("flickPreview");
+  const flickModKey = document.getElementById("flickModKey");
+  const flickLongKey = document.getElementById("flickLongKey");
+
+  let pendingRow = null;      // 現在選択中のキー（例: "か"）
+  let pendingVowelIndex = 0;  // フリックで選んだ母音の位置
+  let pendingFormIndex = 0;   // 濁点・半濁点・小文字のバリエーション位置
+  let commitTimer = null;
+
+  function currentPendingChar() {
+    if (!pendingRow) return null;
+    const base = GYOU_CYCLES[pendingRow][pendingVowelIndex];
+    const forms = KANA_FORMS[base] || [base];
+    return forms[pendingFormIndex % forms.length];
+  }
+
+  function updatePreview() {
+    const ch = currentPendingChar();
+    if (ch) {
+      flickPreview.textContent = ch;
+      flickPreview.hidden = false;
+    } else {
+      flickPreview.hidden = true;
+    }
+  }
+
+  function clearCommitTimer() {
+    if (commitTimer) {
+      clearTimeout(commitTimer);
+      commitTimer = null;
+    }
+  }
+
+  function commitPending() {
+    clearCommitTimer();
+    const ch = currentPendingChar();
+    if (ch) typeChar(ch);
+    pendingRow = null;
+    pendingVowelIndex = 0;
+    pendingFormIndex = 0;
+    updatePreview();
+  }
+
+  function scheduleCommit() {
+    clearCommitTimer();
+    commitTimer = setTimeout(commitPending, FLICK_COMMIT_DELAY);
+  }
+
+  flickCancelPending = () => {
+    clearCommitTimer();
+    pendingRow = null;
+    pendingVowelIndex = 0;
+    pendingFormIndex = 0;
+    updatePreview();
+  };
+
+  // フリック方向で母音を直接選択する（タップ＝基本母音、上下左右＝う・い・え・お系）
+  function selectVowel(row, vowelIndex) {
+    if (pendingRow && pendingRow !== row) {
+      commitPending(); // 別のキーへの入力中だった場合は先に確定する
+    }
+    pendingRow = row;
+    pendingVowelIndex = vowelIndex;
+    pendingFormIndex = 0; // 母音を選び直したら濁点等の状態はリセット
+    updatePreview();
+    scheduleCommit();
+  }
+
+  function detectDirection(dx, dy) {
+    const dist = Math.hypot(dx, dy);
+    if (dist < FLICK_DISTANCE_THRESHOLD) return "tap";
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return dx > 0 ? "right" : "left";
+    }
+    return dy > 0 ? "down" : "up";
+  }
+
+  function pressModifier() {
+    if (!pendingRow) return; // 入力中の文字がなければ何もしない
+    const base = GYOU_CYCLES[pendingRow][pendingVowelIndex];
+    const forms = KANA_FORMS[base] || [base];
+    pendingFormIndex = (pendingFormIndex + 1) % forms.length;
+    updatePreview();
+    scheduleCommit();
+  }
+
+  function pressLongVowel() {
+    if (pendingRow) commitPending();
+    typeChar("-");
+  }
+
+  flickKb.querySelectorAll(".flick-key[data-row]").forEach((btn) => {
+    const row = btn.dataset.row;
+    const dirMap = FLICK_DIR_MAP[row] || { tap: 0 };
+    let startX = 0;
+    let startY = 0;
+
+    btn.addEventListener("pointerdown", (e) => {
+      btn.classList.add("pressed");
+      startX = e.clientX;
+      startY = e.clientY;
+      try { btn.setPointerCapture(e.pointerId); } catch (err) { /* 対応外環境は無視 */ }
+    });
+
+    btn.addEventListener("pointerup", (e) => {
+      btn.classList.remove("pressed");
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const direction = detectDirection(dx, dy);
+      const target = dirMap[direction] !== undefined ? dirMap[direction] : 0;
+
+      if (target === "long") {
+        // わ行の右フリック：長音「ー」を直接入力する
+        if (pendingRow) commitPending();
+        typeChar("-");
+        return;
+      }
+      selectVowel(row, target);
+    });
+
+    btn.addEventListener("pointercancel", () => btn.classList.remove("pressed"));
+  });
+
+  flickModKey.addEventListener("pointerdown", () => flickModKey.classList.add("pressed"));
+  flickModKey.addEventListener("pointerup", () => flickModKey.classList.remove("pressed"));
+  flickModKey.addEventListener("pointerleave", () => flickModKey.classList.remove("pressed"));
+  flickModKey.addEventListener("click", (e) => {
+    e.preventDefault();
+    pressModifier();
+  });
+
+  flickLongKey.addEventListener("pointerdown", () => flickLongKey.classList.add("pressed"));
+  flickLongKey.addEventListener("pointerup", () => flickLongKey.classList.remove("pressed"));
+  flickLongKey.addEventListener("pointerleave", () => flickLongKey.classList.remove("pressed"));
+  flickLongKey.addEventListener("click", (e) => {
+    e.preventDefault();
+    pressLongVowel();
   });
 }
 
