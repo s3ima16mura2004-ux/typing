@@ -16,6 +16,41 @@ const EASY_WORDS = [
   { word: "光",   kana: "ひかり", romaji: ["hikari"] },
   { word: "本気", kana: "ほんき", romaji: ["honki"] },
   { word: "絆",   kana: "きずな", romaji: ["kizuna"] },
+  { word: "愛",   kana: "あい",   romaji: ["ai"] },
+  { word: "歌",   kana: "うた",   romaji: ["uta"] },
+  { word: "声",   kana: "こえ",   romaji: ["koe"] },
+  { word: "夜",   kana: "よる",   romaji: ["yoru"] },
+  { word: "星",   kana: "ほし",   romaji: ["hoshi", "hosi"] },
+  { word: "月",   kana: "つき",   romaji: ["tsuki"] },
+  { word: "花",   kana: "はな",   romaji: ["hana"] },
+  { word: "道",   kana: "みち",   romaji: ["michi", "miti"] },
+  { word: "炎",   kana: "ほのお", romaji: ["honoo"] },
+  { word: "今",   kana: "いま",   romaji: ["ima"] },
+  { word: "私",   kana: "わたし", romaji: ["watashi", "watasi"] },
+  { word: "君",   kana: "きみ",   romaji: ["kimi"] },
+  { word: "心",   kana: "こころ", romaji: ["kokoro"] },
+  { word: "夏",   kana: "なつ",   romaji: ["natsu"] },
+  { word: "風",   kana: "かぜ",   romaji: ["kaze"] },
+  { word: "空",   kana: "そら",   romaji: ["sora"] },
+  { word: "海",   kana: "うみ",   romaji: ["umi"] },
+  { word: "虹",   kana: "にじ",   romaji: ["niji"] },
+  { word: "朝",   kana: "あさ",   romaji: ["asa"] },
+  { word: "影",   kana: "かげ",   romaji: ["kage"] },
+  { word: "波",   kana: "なみ",   romaji: ["nami"] },
+  { word: "雨",   kana: "あめ",   romaji: ["ame"] },
+  { word: "雲",   kana: "くも",   romaji: ["kumo"] },
+  { word: "笑う", kana: "わらう", romaji: ["warau"] },
+  { word: "未来", kana: "みらい", romaji: ["mirai"] },
+  { word: "拳",   kana: "こぶし", romaji: ["kobushi", "kobusi"] },
+  { word: "音",   kana: "おと",   romaji: ["oto"] },
+  { word: "色",   kana: "いろ",   romaji: ["iro"] },
+  { word: "命",   kana: "いのち", romaji: ["inochi", "inoti"] },
+  { word: "時",   kana: "とき",   romaji: ["toki"] },
+  { word: "今夜", kana: "こんや", romaji: ["konya"] },
+  { word: "青",   kana: "あお",   romaji: ["ao"] },
+  { word: "赤",   kana: "あか",   romaji: ["aka"] },
+  { word: "白",   kana: "しろ",   romaji: ["shiro", "siro"] },
+  { word: "黒",   kana: "くろ",   romaji: ["kuro"] },
 ];
 
 const NORMAL_WORDS = [
@@ -37,6 +72,34 @@ const NORMAL_WORDS = [
   { word: "感謝",   kana: "かんしゃ",   romaji: ["kansha", "kansya"] },
   { word: "魂",     kana: "たましい",   romaji: ["tamashii", "tamasii"] },
   { word: "全開",   kana: "ぜんかい",   romaji: ["zenkai"] },
+  { word: "情景",   kana: "じょうけい", romaji: ["joukei"] },
+  { word: "感激",   kana: "かんげき",   romaji: ["kangeki"] },
+  { word: "感動",   kana: "かんどう",   romaji: ["kandou"] },
+  { word: "高鳴る", kana: "たかなる",   romaji: ["takanaru"] },
+  { word: "響く",   kana: "ひびく",     romaji: ["hibiku"] },
+  { word: "輝く",   kana: "かがやく",   romaji: ["kagayaku"] },
+  { word: "弾ける", kana: "はじける",   romaji: ["hajikeru"] },
+  { word: "見つめる", kana: "みつめる", romaji: ["mitsumeru"] },
+  { word: "目指せ", kana: "めざせ",     romaji: ["mezase"] },
+  { word: "誓う",   kana: "ちかう",     romaji: ["chikau", "tikau"] },
+  { word: "舞台",   kana: "ぶたい",     romaji: ["butai"] },
+  { word: "主役",   kana: "しゅやく",   romaji: ["shuyaku", "syuyaku"] },
+  { word: "熱唱",   kana: "ねっしょう", romaji: ["nesshou", "nessyou"] },
+  { word: "独唱",   kana: "どくしょう", romaji: ["dokushou", "dokusyou"] },
+  { word: "音色",   kana: "ねいろ",     romaji: ["neiro"] },
+  { word: "旋律",   kana: "せんりつ",   romaji: ["senritsu"] },
+  { word: "律動",   kana: "りつどう",   romaji: ["ritsudou"] },
+  { word: "心臓",   kana: "しんぞう",   romaji: ["shinzou"] },
+  { word: "鼓動",   kana: "こどう",     romaji: ["kodou"] },
+  { word: "歓喜",   kana: "かんき",     romaji: ["kanki"] },
+  { word: "感涙",   kana: "かんるい",   romaji: ["kanrui"] },
+  { word: "見せ場", kana: "みせば",     romaji: ["miseba"] },
+  { word: "満員",   kana: "まんいん",   romaji: ["mannin"] },
+  { word: "客席",   kana: "きゃくせき", romaji: ["kyakuseki"] },
+  { word: "熱気",   kana: "ねっき",     romaji: ["nekki"] },
+  { word: "高揚",   kana: "こうよう",   romaji: ["kouyou"] },
+  { word: "覚醒",   kana: "かくせい",   romaji: ["kakusei"] },
+  { word: "立ち位置", kana: "たちいち", romaji: ["tachiichi"] },
 ];
 
 const HARD_WORDS = [
@@ -50,23 +113,62 @@ const HARD_WORDS = [
   { word: "心を燃やせ", kana: "こころをもやせ",   romaji: ["kokorowomoyase"] },
   { word: "万雷の拍手", kana: "ばんらいのはくしゅ", romaji: ["banrainohakushu", "banrainohakusyu"] },
   { word: "一生忘れない", kana: "いっしょうわすれない", romaji: ["isshouwasurenai", "issyouwasurenai"] },
+  { word: "咲き誇る",   kana: "さきほこる",       romaji: ["sakihokoru"] },
+  { word: "大合唱",     kana: "だいがっしょう",   romaji: ["daigasshou", "daigassyou"] },
+  { word: "名場面",     kana: "めいばめん",       romaji: ["meibamen"] },
+  { word: "決め台詞",   kana: "きめぜりふ",       romaji: ["kimezerifu"] },
+  { word: "無我夢中",   kana: "むがむちゅう",     romaji: ["mugamuchuu", "mugamutyuu"] },
+  { word: "全身全霊",   kana: "ぜんしんぜんれい", romaji: ["zenshinzenrei"] },
+  { word: "一体感",     kana: "いったいかん",     romaji: ["ittaikan"] },
+  { word: "涙腺崩壊",   kana: "るいせんほうかい", romaji: ["ruisenhoukai"] },
+  { word: "心震える",   kana: "こころふるえる",   romaji: ["kokorofurueru"] },
+  { word: "声援に応える", kana: "せいえんにこたえる", romaji: ["seiennikotaeru"] },
+  { word: "夢の続き",   kana: "ゆめのつづき",     romaji: ["yumenotsuzuki"] },
+  { word: "心のままに", kana: "こころのままに",   romaji: ["kokoronomamani"] },
+  { word: "限界突破",   kana: "げんかいとっぱ",   romaji: ["genkaitoppa"] },
+  { word: "一世一代の舞台", kana: "いっせいちだいのぶたい", romaji: ["isseichidainobutai"] },
 ];
 
 // ---------- ローマ字の表記ゆれを自動で展開する ----------
 // 個別の単語ごとに手打ちしなくても、今後お題が増えたときに以下のルールが自動で効く：
-//   ・「tsu」⇄「tu」（例: jounetsu ⇄ jounetu）
+//   ・shi⇄si / chi⇄ti / tsu⇄tu / fu⇄hu / ji⇄zi
+//   ・sha⇄sya / shu⇄syu / sho⇄syo / cha⇄tya / chu⇄tyu / cho⇄tyo
 //   ・母音を重ねる長音表記 ⇄ ハイフン表記（例: ankooru ⇄ anko-ru）
+const ROMAJI_PAIRS = [
+  ["shi", "si"],
+  ["chi", "ti"],
+  ["tsu", "tu"],
+  ["ji", "zi"],
+  ["sha", "sya"],
+  ["shu", "syu"],
+  ["sho", "syo"],
+  ["cha", "tya"],
+  ["chu", "tyu"],
+  ["cho", "tyo"],
+];
+
 function expandRomajiVariants(str) {
   let variants = new Set([str]);
 
-  // tsu ⇄ tu
+  ROMAJI_PAIRS.forEach(([a, b]) => {
+    const next = new Set();
+    variants.forEach((v) => {
+      next.add(v);
+      if (v.includes(a)) next.add(v.split(a).join(b));
+      if (v.includes(b)) next.add(v.split(b).join(a));
+    });
+    variants = next;
+  });
+
+  // fu ⇄ hu（「shu」「chu」の語尾に含まれる hu は対象外にする）
   let next = new Set();
   variants.forEach((v) => {
     next.add(v);
-    if (v.includes("tsu")) {
-      next.add(v.split("tsu").join("tu"));
-    } else if (v.includes("tu")) {
-      next.add(v.split("tu").join("tsu"));
+    if (/(?<![sc])hu/.test(v)) {
+      next.add(v.replace(/(?<![sc])hu/g, "fu"));
+    }
+    if (v.includes("fu")) {
+      next.add(v.split("fu").join("hu"));
     }
   });
   variants = next;
@@ -142,6 +244,7 @@ const el = {
   spotlight: document.getElementById("spotlight"),
   mic: document.getElementById("mic"),
   muteBtn: document.getElementById("muteBtn"),
+  pauseBtn: document.getElementById("pauseBtn"),
   scoreValue: document.getElementById("scoreValue"),
   comboValue: document.getElementById("comboValue"),
   timeValue: document.getElementById("timeValue"),
@@ -161,6 +264,13 @@ const el = {
   resultChars: document.getElementById("resultChars"),
   resultAcc: document.getElementById("resultAcc"),
   retryBtn: document.getElementById("retryBtn"),
+  backToMenuBtn: document.getElementById("backToMenuBtn"),
+  pauseOverlay: document.getElementById("pauseOverlay"),
+  resumeBtn: document.getElementById("resumeBtn"),
+  retireBtn: document.getElementById("retireBtn"),
+  quitBtn: document.getElementById("quitBtn"),
+  countdownOverlay: document.getElementById("countdownOverlay"),
+  countdownNum: document.getElementById("countdownNum"),
 };
 
 let state = null;
@@ -531,6 +641,7 @@ function startGame() {
   updateHud();
   el.startOverlay.hidden = true;
   el.resultOverlay.hidden = true;
+  el.pauseOverlay.hidden = true;
   el.hypeBanner.classList.remove("show");
   state.timerId = setInterval(tick, 1000);
 
@@ -538,6 +649,39 @@ function startGame() {
   if (nativeInput && !nativeInput.hidden) {
     nativeInput.focus();
   }
+}
+
+function runCountdown(onDone) {
+  el.startOverlay.hidden = true;
+  el.resultOverlay.hidden = true;
+  el.pauseOverlay.hidden = true;
+  el.countdownOverlay.hidden = false;
+
+  let n = 3;
+  const showNum = () => {
+    el.countdownNum.textContent = n;
+    el.countdownNum.classList.remove("pulse");
+    void el.countdownNum.offsetWidth;
+    el.countdownNum.classList.add("pulse");
+    sfxTick();
+  };
+  showNum();
+
+  const iv = setInterval(() => {
+    n -= 1;
+    if (n > 0) {
+      showNum();
+    } else {
+      clearInterval(iv);
+      el.countdownOverlay.hidden = true;
+      onDone();
+    }
+  }, 800);
+}
+
+function beginWithCountdown() {
+  ensureAudio();
+  runCountdown(startGame);
 }
 
 function endGame() {
@@ -555,14 +699,57 @@ function endGame() {
   el.resultBest.innerHTML = isNew
     ? `<span class="is-new">自己ベスト更新！ ${best}</span>`
     : `自己ベスト（${DIFFICULTIES[state.difficulty].label}）：${best}`;
+  el.pauseOverlay.hidden = true;
   el.resultOverlay.hidden = false;
 
   refreshStartBest();
 }
 
-el.startBtn.addEventListener("click", startGame);
-el.retryBtn.addEventListener("click", startGame);
+function pauseGame() {
+  if (!state || !state.running) return;
+  state.running = false;
+  clearInterval(state.timerId);
+  el.pauseOverlay.hidden = false;
+}
+
+function resumeGame() {
+  if (!state) return;
+  el.pauseOverlay.hidden = true;
+  state.running = true;
+  state.timerId = setInterval(tick, 1000);
+  if (nativeInput && !nativeInput.hidden) {
+    nativeInput.focus();
+  }
+}
+
+function backToMenu() {
+  if (state) clearInterval(state.timerId);
+  state = null;
+  el.pauseOverlay.hidden = true;
+  el.resultOverlay.hidden = true;
+  el.countdownOverlay.hidden = true;
+  el.startOverlay.hidden = false;
+  refreshStartBest();
+}
+
+el.startBtn.addEventListener("click", beginWithCountdown);
+el.retryBtn.addEventListener("click", beginWithCountdown);
+el.backToMenuBtn.addEventListener("click", backToMenu);
+el.pauseBtn.addEventListener("click", pauseGame);
+el.resumeBtn.addEventListener("click", resumeGame);
+el.retireBtn.addEventListener("click", endGame);
+el.quitBtn.addEventListener("click", backToMenu);
 window.addEventListener("keydown", handleKeydown);
+
+// Escapeキーで一時停止・再開をトグル
+window.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape" || !state) return;
+  if (state.running) {
+    pauseGame();
+  } else if (!el.pauseOverlay.hidden) {
+    resumeGame();
+  }
+});
 
 /* ---------- 難易度選択 ---------- */
 if (el.diffSelect) {

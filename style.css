@@ -169,12 +169,17 @@ body{
   50%{ filter: brightness(1.5); }
 }
 
-/* ---------- ミュートボタン ---------- */
-.mute-btn{
+/* ---------- 左上コントロール ---------- */
+.top-controls{
   position: absolute;
   top: 14px;
   left: 18px;
   z-index: 4;
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn{
   width: 34px;
   height: 34px;
   border: none;
@@ -185,9 +190,46 @@ body{
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
 }
-.mute-btn:hover{ background: rgba(255,255,255,0.16); }
-.mute-btn:active{ transform: scale(0.92); }
-.mute-btn:focus-visible{ outline: 2px solid var(--cyan); outline-offset: 2px; }
+.icon-btn:hover{ background: rgba(255,255,255,0.16); }
+.icon-btn:active{ transform: scale(0.92); }
+.icon-btn:focus-visible{ outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* ---------- カウントダウン ---------- */
+.countdown-overlay{
+  background: rgba(8,6,15,0.85);
+}
+
+.countdown-num{
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(72px, 24vw, 120px);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,209,102,0.6);
+}
+
+.countdown-num.pulse{
+  animation: countdownPulse 0.7s ease;
+}
+
+@keyframes countdownPulse{
+  0%{ transform: scale(1.5); opacity: 0; }
+  40%{ transform: scale(1); opacity: 1; }
+  100%{ transform: scale(1); opacity: 1; }
+}
+
+.overlay-btn--sub{
+  margin-top: 10px;
+  background: transparent;
+  color: var(--ink-dim);
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: none;
+}
+.overlay-btn--sub:hover{
+  color: var(--ink);
+  border-color: rgba(255,255,255,0.35);
+  transform: none;
+  box-shadow: none;
+}
 
 /* ---------- HYPE満タンバナー ---------- */
 .hype-banner{

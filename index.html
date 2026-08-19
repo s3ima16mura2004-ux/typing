@@ -19,8 +19,11 @@
   <!-- スポットライト -->
   <div class="spotlight" id="spotlight"></div>
 
-  <!-- ミュートボタン -->
-  <button class="mute-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="音を消す">🔊</button>
+  <!-- 左上コントロール（ミュート・一時停止） -->
+  <div class="top-controls">
+    <button class="icon-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="音を消す">🔊</button>
+    <button class="icon-btn" id="pauseBtn" type="button" aria-label="一時停止">⏸</button>
+  </div>
 
   <!-- HUD -->
   <header class="hud">
@@ -91,6 +94,20 @@
       <div><span class="hud-label">正答率</span><span class="result-num" id="resultAcc">0%</span></div>
     </div>
     <button class="overlay-btn" id="retryBtn">アンコール（もう一度）</button>
+    <button class="overlay-btn overlay-btn--sub" id="backToMenuBtn">難易度を選びなおす</button>
+  </div>
+
+  <!-- 一時停止画面 -->
+  <div class="overlay" id="pauseOverlay" hidden>
+    <h2 class="overlay-title">一時停止中</h2>
+    <button class="overlay-btn" id="resumeBtn">再開する</button>
+    <button class="overlay-btn overlay-btn--sub" id="retireBtn">結果を見て終える</button>
+    <button class="overlay-btn overlay-btn--sub" id="quitBtn">難易度選択に戻る</button>
+  </div>
+
+  <!-- カウントダウン画面 -->
+  <div class="overlay countdown-overlay" id="countdownOverlay" hidden>
+    <span class="countdown-num" id="countdownNum">3</span>
   </div>
 
 </div>
