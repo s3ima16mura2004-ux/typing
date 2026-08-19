@@ -77,7 +77,16 @@
         <span class="diff-btn-title">むずかしい</span>
         <span class="diff-btn-desc">長めの単語中心</span>
       </button>
+      <button type="button" class="diff-btn" data-diff="expert">
+        <span class="diff-btn-title">エキスパート</span>
+        <span class="diff-btn-desc">一文フレーズのみ</span>
+      </button>
     </div>
+
+    <label class="practice-toggle">
+      <input type="checkbox" id="practiceToggle">
+      <span>練習モード（タイマーなし・スコア記録なし）</span>
+    </label>
 
     <p class="best-note" id="startBest">自己ベスト：-</p>
 
@@ -94,6 +103,7 @@
       <div><span class="hud-label">正答率</span><span class="result-num" id="resultAcc">0%</span></div>
     </div>
     <button class="overlay-btn" id="retryBtn">アンコール（もう一度）</button>
+    <button class="overlay-btn overlay-btn--sub" id="shareBtn">結果を画像で保存</button>
     <button class="overlay-btn overlay-btn--sub" id="backToMenuBtn">難易度を選びなおす</button>
   </div>
 

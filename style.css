@@ -360,8 +360,10 @@ body{
 /* ---------- 難易度選択 ---------- */
 .diff-select{
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .diff-btn{
@@ -369,12 +371,12 @@ body{
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  min-width: 84px;
+  min-width: 74px;
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 12px;
   background: var(--bg-panel);
   color: var(--ink-dim);
-  padding: 10px 12px;
+  padding: 9px 10px;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
@@ -412,6 +414,25 @@ body{
 .best-note .is-new{
   color: var(--gold);
   font-weight: 700;
+}
+
+/* ---------- 練習モードのトグル ---------- */
+.practice-toggle{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--ink-dim);
+  cursor: pointer;
+}
+
+.practice-toggle input{
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gold);
+  cursor: pointer;
 }
 
 .overlay-btn{

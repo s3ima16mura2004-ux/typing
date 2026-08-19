@@ -129,6 +129,21 @@ const HARD_WORDS = [
   { word: "一世一代の舞台", kana: "いっせいちだいのぶたい", romaji: ["isseichidainobutai"] },
 ];
 
+const EXPERT_WORDS = [
+  { word: "今宵限りの奇跡を起こせ",     kana: "こよいかぎりのきせきをおこせ",     romaji: ["koyoikagirinokisekiwookose"] },
+  { word: "声援よ届け空の彼方まで",     kana: "せいえんよとどけそらのかなたまで", romaji: ["seienyotodokesoranokanatamade"] },
+  { word: "忘れられない夜になる",       kana: "わすれられないよるになる",         romaji: ["wasurerarenaiyoruninaru"] },
+  { word: "涙も汗も全部歌にする",       kana: "なみだもあせもぜんぶうたにする",   romaji: ["namidamoasemozenbuutanisuru"] },
+  { word: "今この瞬間がすべて",         kana: "いまこのしゅんかんがすべて",       romaji: ["imakonoshunkangasubete"] },
+  { word: "心の底から叫びたい",         kana: "こころのそこからさけびたい",       romaji: ["kokoronosokokarasakebitai"] },
+  { word: "誰も知らない物語を歌う",     kana: "だれもしらないものがたりをうたう", romaji: ["daremoshiranaimonogatariwoutau"] },
+  { word: "ステージの上だけが自由",     kana: "すてーじのうえだけがじゆう",       romaji: ["suteejinouedakegajiyuu"] },
+  { word: "限界の先にある景色",         kana: "げんかいのさきにあるけしき",       romaji: ["genkainosakiniarukeshiki"] },
+  { word: "一音一音に想いを込めて",     kana: "いちおんいちおんにおもいをこめて", romaji: ["ichionichionniomoiwokomete"] },
+  { word: "今夜だけは主役でいさせて",   kana: "こんやだけはしゅやくでいさせて",   romaji: ["konyadakewashuyakudeisasete"] },
+  { word: "客席まで届く声で叫ぶ",       kana: "きゃくせきまでとどくこえでさけぶ", romaji: ["kyakusekimadetodokukoedesakebu"] },
+];
+
 // ---------- ローマ字の表記ゆれを自動で展開する ----------
 // 個別の単語ごとに手打ちしなくても、今後お題が増えたときに以下のルールが自動で効く：
 //   ・shi⇄si / chi⇄ti / tsu⇄tu / fu⇄hu / ji⇄zi
@@ -200,7 +215,7 @@ function expandWordList(list) {
   return list;
 }
 
-[EASY_WORDS, NORMAL_WORDS, HARD_WORDS].forEach(expandWordList);
+[EASY_WORDS, NORMAL_WORDS, HARD_WORDS, EXPERT_WORDS].forEach(expandWordList);
 
 // ---------- 難易度設定 ----------
 const DIFFICULTIES = {
@@ -221,6 +236,12 @@ const DIFFICULTIES = {
     words: HARD_WORDS,
     correctHype: 3,
     missPenalty: 9,
+  },
+  expert: {
+    label: "エキスパート",
+    words: EXPERT_WORDS,
+    correctHype: 2,
+    missPenalty: 12,
   },
 };
 
@@ -264,6 +285,7 @@ const el = {
   resultChars: document.getElementById("resultChars"),
   resultAcc: document.getElementById("resultAcc"),
   retryBtn: document.getElementById("retryBtn"),
+  shareBtn: document.getElementById("shareBtn"),
   backToMenuBtn: document.getElementById("backToMenuBtn"),
   pauseOverlay: document.getElementById("pauseOverlay"),
   resumeBtn: document.getElementById("resumeBtn"),
@@ -271,6 +293,7 @@ const el = {
   quitBtn: document.getElementById("quitBtn"),
   countdownOverlay: document.getElementById("countdownOverlay"),
   countdownNum: document.getElementById("countdownNum"),
+  practiceToggle: document.getElementById("practiceToggle"),
 };
 
 let state = null;
@@ -382,6 +405,14 @@ function sfxTick() {
   playTone(400, 0.05, "square", 0.06);
 }
 
+// ---------- バイブレーション（対応端末のみ・ミュート設定と連動） ----------
+function vibrate(pattern) {
+  if (muted) return;
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+}
+
 function updateMuteBtn() {
   el.muteBtn.textContent = muted ? "🔇" : "🔊";
   el.muteBtn.setAttribute("aria-pressed", String(muted));
@@ -417,10 +448,11 @@ function pickWord(excludeWord) {
   return candidate;
 }
 
-function initState(difficulty) {
+function initState(difficulty, practice) {
   return {
     running: false,
     difficulty,
+    practice: !!practice,
     timeLeft: GAME_SECONDS,
     score: 0,
     correctChars: 0,
@@ -473,8 +505,13 @@ function comboMultiplier(combo) {
 
 function updateHud() {
   el.scoreValue.textContent = state.score;
-  el.timeValue.textContent = state.timeLeft;
-  el.timeValue.classList.toggle("time-warn", state.timeLeft <= 10);
+  if (state.practice) {
+    el.timeValue.textContent = "∞";
+    el.timeValue.classList.remove("time-warn");
+  } else {
+    el.timeValue.textContent = state.timeLeft;
+    el.timeValue.classList.toggle("time-warn", state.timeLeft <= 10);
+  }
   el.hypeFill.style.width = `${state.hype}%`;
   el.hypeFill.classList.toggle("maxed", state.hype >= 100);
 
@@ -516,6 +553,7 @@ function celebrateHypeMax() {
   void el.hypeBanner.offsetWidth;
   el.hypeBanner.classList.add("show");
   sfxHypeMax();
+  vibrate([40, 60, 40, 60, 120]);
   setTimeout(() => el.crowd.classList.remove("wave"), 1400);
 }
 
@@ -543,6 +581,7 @@ function onCorrectKeystroke() {
   state.hype = Math.min(100, state.hype + cfg.correctHype);
   lightNextPenlight();
   sfxCorrect();
+  vibrate(12);
 
   if (state.hype >= 100 && !state.hypeCelebrated) {
     state.hypeCelebrated = true;
@@ -558,6 +597,7 @@ function onMissKeystroke() {
   if (state.hype < 100) state.hypeCelebrated = false;
   flashMiss();
   sfxMiss();
+  vibrate([25, 40, 25]);
 }
 
 function onWordComplete() {
@@ -566,6 +606,7 @@ function onWordComplete() {
   state.score += Math.round(20 * mult);
   burstSpotlight();
   sfxWordComplete();
+  vibrate(30);
   nextWord();
 }
 
@@ -618,6 +659,7 @@ function typeChar(rawKey) {
 }
 
 function tick() {
+  if (state.practice) return; // 練習モードはタイマー無し
   state.timeLeft -= 1;
   updateHud();
   if (state.timeLeft <= 3 && state.timeLeft > 0) sfxTick();
@@ -634,7 +676,8 @@ function rankFor(score) {
 
 function startGame() {
   ensureAudio();
-  state = initState(selectedDifficulty);
+  const practice = !!(el.practiceToggle && el.practiceToggle.checked);
+  state = initState(selectedDifficulty, practice);
   state.running = true;
   buildCrowd();
   nextWord();
@@ -690,15 +733,21 @@ function endGame() {
 
   const totalChars = state.correctChars + state.missChars;
   const acc = totalChars === 0 ? 0 : Math.round((state.correctChars / totalChars) * 100);
-  const { isNew, best } = saveBestScoreIfHigher(state.difficulty, state.score);
 
-  el.resultRank.textContent = rankFor(state.score);
+  if (state.practice) {
+    el.resultRank.textContent = "練習おつかれさまでした！";
+    el.resultBest.textContent = "練習モードのためスコアは記録されません";
+  } else {
+    const { isNew, best } = saveBestScoreIfHigher(state.difficulty, state.score);
+    el.resultRank.textContent = rankFor(state.score);
+    el.resultBest.innerHTML = isNew
+      ? `<span class="is-new">自己ベスト更新！ ${best}</span>`
+      : `自己ベスト（${DIFFICULTIES[state.difficulty].label}）：${best}`;
+  }
+
   el.resultScore.textContent = state.score;
   el.resultChars.textContent = state.correctChars;
   el.resultAcc.textContent = `${acc}%`;
-  el.resultBest.innerHTML = isNew
-    ? `<span class="is-new">自己ベスト更新！ ${best}</span>`
-    : `自己ベスト（${DIFFICULTIES[state.difficulty].label}）：${best}`;
   el.pauseOverlay.hidden = true;
   el.resultOverlay.hidden = false;
 
@@ -773,6 +822,109 @@ if (el.diffSelect) {
   }
 }
 refreshStartBest();
+
+/* ---------- 練習モードのトグル（状態を記憶） ---------- */
+const PRACTICE_KEY = "karaokeTyping.practice";
+if (el.practiceToggle) {
+  el.practiceToggle.checked = safeGet(PRACTICE_KEY) === "1";
+  el.practiceToggle.addEventListener("change", () => {
+    safeSet(PRACTICE_KEY, el.practiceToggle.checked ? "1" : "0");
+  });
+}
+
+/* ---------- 結果を画像で保存・シェア ---------- */
+function buildResultCanvas() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 800;
+  canvas.height = 800;
+  const ctx = canvas.getContext("2d");
+
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, "#171330");
+  grad.addColorStop(1, "#08060f");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.textAlign = "center";
+
+  ctx.fillStyle = "#b9b3d6";
+  ctx.font = "600 24px sans-serif";
+  ctx.fillText("ライブステージ・タイピング", canvas.width / 2, 110);
+
+  ctx.fillStyle = "#ffd166";
+  ctx.font = "900 52px sans-serif";
+  const titleText = state.practice ? "練習おつかれさま！" : rankFor(state.score);
+  ctx.fillText(titleText, canvas.width / 2, 200);
+
+  ctx.fillStyle = "#f5f0ea";
+  ctx.font = "700 72px monospace";
+  ctx.fillText(state.practice ? "PRACTICE" : `SCORE ${state.score}`, canvas.width / 2, 330);
+
+  const totalChars = state.correctChars + state.missChars;
+  const acc = totalChars === 0 ? 0 : Math.round((state.correctChars / totalChars) * 100);
+
+  ctx.fillStyle = "#b9b3d6";
+  ctx.font = "500 26px sans-serif";
+  ctx.fillText(`難易度：${DIFFICULTIES[state.difficulty].label}`, canvas.width / 2, 400);
+  ctx.fillText(`正打数 ${state.correctChars}　正答率 ${acc}%`, canvas.width / 2, 440);
+
+  // 装飾のペンライト列
+  const colors = ["#ffd166", "#ff6fa5", "#6fd9ff"];
+  const rows = 4;
+  const cols = 11;
+  const startY = 560;
+  const gapX = (canvas.width - 120) / (cols - 1);
+  const gapY = 50;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      ctx.fillStyle = colors[(r + c) % colors.length];
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      ctx.roundRect(60 + c * gapX - 6, startY + r * gapY, 12, 30, 6);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  return canvas;
+}
+
+function shareResult() {
+  if (!state) return;
+  const canvas = buildResultCanvas();
+
+  canvas.toBlob(async (blob) => {
+    if (!blob) return;
+    const fileName = "live-stage-typing-result.png";
+    const file = new File([blob], fileName, { type: "image/png" });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "ライブステージ・タイピング",
+          text: state.practice ? "練習モードで遊びました！" : `スコア ${state.score} でクリア！`,
+        });
+        return;
+      } catch (err) {
+        // 共有がキャンセル・失敗した場合はダウンロードにフォールバック
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, "image/png");
+}
+
+if (el.shareBtn) {
+  el.shareBtn.addEventListener("click", shareResult);
+}
 
 /* ---------- 入力方法の切り替え（専用キーボード / 端末のキーボード） ---------- */
 const KBD_MODE_KEY = "karaokeTyping.kbdMode";
