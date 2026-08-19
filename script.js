@@ -156,12 +156,15 @@ function isPrefixOfAny(typed, romajiOptions) {
   return romajiOptions.some((r) => r.startsWith(typed));
 }
 
-function handleKey(e) {
-  if (!state.running) return;
-  // 単一の英字キーのみ受け付ける（Shiftなどの修飾キーは無視）
+function handleKeydown(e) {
   if (e.key.length !== 1 || !/^[a-zA-Z]$/.test(e.key)) return;
+  typeChar(e.key);
+}
 
-  const key = e.key.toLowerCase();
+function typeChar(rawKey) {
+  if (!state.running) return;
+
+  const key = rawKey.toLowerCase();
   const attempt = state.typed + key;
   const { romaji } = state.current;
 
@@ -215,6 +218,11 @@ function startGame() {
   el.startOverlay.hidden = true;
   el.resultOverlay.hidden = true;
   state.timerId = setInterval(tick, 1000);
+
+  // 「端末のキーボード」モードならゲーム開始と同時にフォーカスして開く
+  if (nativeInput && !nativeInput.hidden) {
+    nativeInput.focus();
+  }
 }
 
 function endGame() {
@@ -233,7 +241,75 @@ function endGame() {
 
 el.startBtn.addEventListener("click", startGame);
 el.retryBtn.addEventListener("click", startGame);
-window.addEventListener("keydown", handleKey);
+window.addEventListener("keydown", handleKeydown);
+
+// ---------- 入力方法の切り替え（専用キーボード / 端末のキーボード） ----------
+const KBD_MODE_KEY = "karaokeTyping.kbdMode";
+const vkb = document.getElementById("vkb");
+const nativeInput = document.getElementById("nativeInput");
+const kbdToggle = document.getElementById("kbdToggle");
+
+function setKbdMode(mode) {
+  const isNative = mode === "native";
+  vkb.hidden = isNative;
+  nativeInput.hidden = !isNative;
+
+  kbdToggle.querySelectorAll(".kbd-toggle-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === mode);
+  });
+
+  try {
+    localStorage.setItem(KBD_MODE_KEY, mode);
+  } catch (err) {
+    // プライベートブラウズ等でlocalStorageが使えない場合は無視
+  }
+
+  if (isNative && state && state.running) {
+    nativeInput.focus();
+  }
+}
+
+if (kbdToggle) {
+  kbdToggle.querySelectorAll(".kbd-toggle-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setKbdMode(btn.dataset.mode));
+  });
+
+  let savedMode = "custom";
+  try {
+    savedMode = localStorage.getItem(KBD_MODE_KEY) || "custom";
+  } catch (err) {
+    // 無視
+  }
+  setKbdMode(savedMode);
+}
+
+// 端末純正キーボードからの入力（1文字ずつ拾ってすぐ入力欄をクリアする）
+if (nativeInput) {
+  nativeInput.addEventListener("input", () => {
+    const chars = nativeInput.value.match(/[a-zA-Z]/g) || [];
+    chars.forEach((ch) => typeChar(ch));
+    nativeInput.value = "";
+  });
+}
+
+// ---------- 専用オンスクリーンキーボード（タップ操作） ----------
+if (vkb) {
+  vkb.querySelectorAll(".vkb-key").forEach((btn) => {
+    const key = btn.dataset.key;
+
+    btn.addEventListener("pointerdown", () => {
+      btn.classList.add("pressed");
+    });
+    const release = () => btn.classList.remove("pressed");
+    btn.addEventListener("pointerup", release);
+    btn.addEventListener("pointerleave", release);
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      typeChar(key);
+    });
+  });
+}
 
 // 初期表示
 buildCrowd();

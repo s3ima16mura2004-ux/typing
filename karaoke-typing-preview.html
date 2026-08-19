@@ -28,11 +28,14 @@ body{
   margin: 0;
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   background: #000;
   font-family: var(--font-body);
   color: var(--ink);
+  padding: 10px;
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -231,6 +234,14 @@ body{
   backdrop-filter: blur(2px);
 }
 
+.overlay[hidden]{
+  display: none;
+}
+
+.overlay[hidden]{
+  display: none;
+}
+
 .overlay-title{
   font-family: var(--font-display);
   font-weight: 900;
@@ -275,6 +286,120 @@ body{
 
 @media (max-width: 400px){
   .crowd{ grid-template-columns: repeat(7, 1fr); }
+}
+
+/* ---------- オンスクリーンキーボードエリア ---------- */
+.kbd-area{
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  user-select: none;
+}
+
+/* キーボード切り替えトグル */
+.kbd-toggle{
+  display: flex;
+  gap: 6px;
+  align-self: center;
+}
+
+.kbd-toggle-btn{
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-dim);
+  background: var(--bg-panel);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 999px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.kbd-toggle-btn.active{
+  color: var(--bg-deep);
+  background: linear-gradient(90deg, var(--gold), var(--pink));
+  border-color: transparent;
+}
+
+.kbd-toggle-btn:focus-visible{
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* 専用オンスクリーンキーボード */
+.vkb{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vkb[hidden]{ display: none; }
+
+.vkb-row{
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.vkb-key{
+  flex: 1;
+  max-width: 42px;
+  aspect-ratio: 1 / 1;
+  border: none;
+  border-radius: 8px;
+  background: var(--bg-panel);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: lowercase;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.4);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s ease, transform 0.1s ease;
+}
+
+.vkb-key:active,
+.vkb-key.pressed{
+  background: var(--gold);
+  color: var(--bg-deep);
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+
+/* 端末純正キーボード用の入力欄 */
+.native-input{
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-mono);
+  font-size: 16px; /* iOSの自動ズームを防ぐため16px以上 */
+  color: var(--ink);
+  background: var(--bg-panel);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.native-input::placeholder{
+  color: var(--ink-dim);
+}
+
+.native-input:focus{
+  outline: none;
+  border-color: var(--gold);
+}
+
+.native-input[hidden]{ display: none; }
+
+/* 物理キーボードがある環境（PC等）では入力エリア全体を非表示にする */
+@media (hover: hover) and (pointer: fine){
+  .kbd-area{ display: none; }
 }
 
 </style>
@@ -337,6 +462,67 @@ body{
     <button class="overlay-btn" id="retryBtn">アンコール（もう一度）</button>
   </div>
 
+</div>
+
+<!-- タッチ端末用の入力エリア（物理キーボードがある環境では自動的に隠れる） -->
+<div class="kbd-area" id="kbdArea" aria-hidden="true">
+
+  <!-- キーボード切り替えトグル -->
+  <div class="kbd-toggle" id="kbdToggle" role="group" aria-label="入力方法の切り替え">
+    <button type="button" class="kbd-toggle-btn active" data-mode="custom">専用キーボード</button>
+    <button type="button" class="kbd-toggle-btn" data-mode="native">端末のキーボード</button>
+  </div>
+
+  <!-- 専用オンスクリーンキーボード -->
+  <div class="vkb" id="vkb">
+    <div class="vkb-row">
+      <button type="button" class="vkb-key" data-key="q">q</button>
+      <button type="button" class="vkb-key" data-key="w">w</button>
+      <button type="button" class="vkb-key" data-key="e">e</button>
+      <button type="button" class="vkb-key" data-key="r">r</button>
+      <button type="button" class="vkb-key" data-key="t">t</button>
+      <button type="button" class="vkb-key" data-key="y">y</button>
+      <button type="button" class="vkb-key" data-key="u">u</button>
+      <button type="button" class="vkb-key" data-key="i">i</button>
+      <button type="button" class="vkb-key" data-key="o">o</button>
+      <button type="button" class="vkb-key" data-key="p">p</button>
+    </div>
+    <div class="vkb-row">
+      <button type="button" class="vkb-key" data-key="a">a</button>
+      <button type="button" class="vkb-key" data-key="s">s</button>
+      <button type="button" class="vkb-key" data-key="d">d</button>
+      <button type="button" class="vkb-key" data-key="f">f</button>
+      <button type="button" class="vkb-key" data-key="g">g</button>
+      <button type="button" class="vkb-key" data-key="h">h</button>
+      <button type="button" class="vkb-key" data-key="j">j</button>
+      <button type="button" class="vkb-key" data-key="k">k</button>
+      <button type="button" class="vkb-key" data-key="l">l</button>
+    </div>
+    <div class="vkb-row">
+      <button type="button" class="vkb-key" data-key="z">z</button>
+      <button type="button" class="vkb-key" data-key="x">x</button>
+      <button type="button" class="vkb-key" data-key="c">c</button>
+      <button type="button" class="vkb-key" data-key="v">v</button>
+      <button type="button" class="vkb-key" data-key="b">b</button>
+      <button type="button" class="vkb-key" data-key="n">n</button>
+      <button type="button" class="vkb-key" data-key="m">m</button>
+    </div>
+  </div>
+
+  <!-- 端末純正キーボード用の入力欄 -->
+  <input
+    type="text"
+    id="nativeInput"
+    class="native-input"
+    placeholder="ここをタップしてローマ字で入力"
+    autocomplete="off"
+    autocapitalize="off"
+    autocorrect="off"
+    spellcheck="false"
+    inputmode="text"
+    aria-label="ローマ字入力欄"
+    hidden
+  >
 </div>
 
 <script>
@@ -498,12 +684,15 @@ function isPrefixOfAny(typed, romajiOptions) {
   return romajiOptions.some((r) => r.startsWith(typed));
 }
 
-function handleKey(e) {
-  if (!state.running) return;
-  // 単一の英字キーのみ受け付ける（Shiftなどの修飾キーは無視）
+function handleKeydown(e) {
   if (e.key.length !== 1 || !/^[a-zA-Z]$/.test(e.key)) return;
+  typeChar(e.key);
+}
 
-  const key = e.key.toLowerCase();
+function typeChar(rawKey) {
+  if (!state.running) return;
+
+  const key = rawKey.toLowerCase();
   const attempt = state.typed + key;
   const { romaji } = state.current;
 
@@ -557,6 +746,11 @@ function startGame() {
   el.startOverlay.hidden = true;
   el.resultOverlay.hidden = true;
   state.timerId = setInterval(tick, 1000);
+
+  // 「端末のキーボード」モードならゲーム開始と同時にフォーカスして開く
+  if (nativeInput && !nativeInput.hidden) {
+    nativeInput.focus();
+  }
 }
 
 function endGame() {
@@ -575,7 +769,75 @@ function endGame() {
 
 el.startBtn.addEventListener("click", startGame);
 el.retryBtn.addEventListener("click", startGame);
-window.addEventListener("keydown", handleKey);
+window.addEventListener("keydown", handleKeydown);
+
+// ---------- 入力方法の切り替え（専用キーボード / 端末のキーボード） ----------
+const KBD_MODE_KEY = "karaokeTyping.kbdMode";
+const vkb = document.getElementById("vkb");
+const nativeInput = document.getElementById("nativeInput");
+const kbdToggle = document.getElementById("kbdToggle");
+
+function setKbdMode(mode) {
+  const isNative = mode === "native";
+  vkb.hidden = isNative;
+  nativeInput.hidden = !isNative;
+
+  kbdToggle.querySelectorAll(".kbd-toggle-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === mode);
+  });
+
+  try {
+    localStorage.setItem(KBD_MODE_KEY, mode);
+  } catch (err) {
+    // プライベートブラウズ等でlocalStorageが使えない場合は無視
+  }
+
+  if (isNative && state && state.running) {
+    nativeInput.focus();
+  }
+}
+
+if (kbdToggle) {
+  kbdToggle.querySelectorAll(".kbd-toggle-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setKbdMode(btn.dataset.mode));
+  });
+
+  let savedMode = "custom";
+  try {
+    savedMode = localStorage.getItem(KBD_MODE_KEY) || "custom";
+  } catch (err) {
+    // 無視
+  }
+  setKbdMode(savedMode);
+}
+
+// 端末純正キーボードからの入力（1文字ずつ拾ってすぐ入力欄をクリアする）
+if (nativeInput) {
+  nativeInput.addEventListener("input", () => {
+    const chars = nativeInput.value.match(/[a-zA-Z]/g) || [];
+    chars.forEach((ch) => typeChar(ch));
+    nativeInput.value = "";
+  });
+}
+
+// ---------- 専用オンスクリーンキーボード（タップ操作） ----------
+if (vkb) {
+  vkb.querySelectorAll(".vkb-key").forEach((btn) => {
+    const key = btn.dataset.key;
+
+    btn.addEventListener("pointerdown", () => {
+      btn.classList.add("pressed");
+    });
+    const release = () => btn.classList.remove("pressed");
+    btn.addEventListener("pointerup", release);
+    btn.addEventListener("pointerleave", release);
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      typeChar(key);
+    });
+  });
+}
 
 // 初期表示
 buildCrowd();
