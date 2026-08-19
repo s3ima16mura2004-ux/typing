@@ -542,6 +542,10 @@ body{
   justify-content: center;
 }
 
+.kbd-toggle[hidden]{
+  display: none;
+}
+
 .kbd-toggle-btn{
   font-family: var(--font-body);
   font-size: 12px;

@@ -552,6 +552,10 @@ body{
   justify-content: center;
 }
 
+.kbd-toggle[hidden]{
+  display: none;
+}
+
 .kbd-toggle-btn{
   font-family: var(--font-body);
   font-size: 12px;
@@ -1895,11 +1899,21 @@ function setKbdMode(mode) {
   }
 }
 
+// タッチ専用端末（スマホ・タブレット）では、IME変換に起因する誤動作を避けるため
+// 「端末のキーボード」を選択肢から外し、かな専用キーボードだけを表示する。
+// マウス・トラックパッドが使える環境（hover:hover）ではこれまで通り選べるようにする。
+const isTouchOnlyDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+
 if (kbdToggle) {
-  kbdToggle.querySelectorAll(".kbd-toggle-btn").forEach((btn) => {
-    btn.addEventListener("click", () => setKbdMode(btn.dataset.mode));
-  });
-  setKbdMode(safeGet(KBD_MODE_KEY) || "custom");
+  if (isTouchOnlyDevice) {
+    kbdToggle.hidden = true;
+    setKbdMode("flick");
+  } else {
+    kbdToggle.querySelectorAll(".kbd-toggle-btn").forEach((btn) => {
+      btn.addEventListener("click", () => setKbdMode(btn.dataset.mode));
+    });
+    setKbdMode(safeGet(KBD_MODE_KEY) || "custom");
+  }
 }
 
 // 端末純正キーボードからの入力（ローマ字・かなの両方に対応）
