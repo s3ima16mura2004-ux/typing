@@ -144,7 +144,7 @@ if (flickKb) {
 
   function pressLongVowel() {
     if (pendingRow) commitPending();
-    typeChar("-");
+    typeChar("ー"); // かな入力なので、実際の長音記号（U+30FC）をそのまま送る
   }
 
   flickKb.querySelectorAll(".flick-key[data-row]").forEach((btn) => {
@@ -170,7 +170,7 @@ if (flickKb) {
       if (target === "long") {
         // わ行の右フリック：長音「ー」を直接入力する
         if (pendingRow) commitPending();
-        typeChar("-");
+        typeChar("ー"); // かな入力なので、実際の長音記号（U+30FC）をそのまま送る
         return;
       }
       selectVowel(row, target);
