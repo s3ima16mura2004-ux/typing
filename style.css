@@ -370,10 +370,19 @@ body{
   padding: 32px;
   background: rgba(8,6,15,0.92);
   backdrop-filter: blur(2px);
+  overflow-y: auto;
 }
 
 .overlay[hidden]{
   display: none;
+}
+
+/* コンテンツが増えて画面をはみ出す可能性がある画面（スタート・結果）は
+   縦中央寄せをやめて上詰め＋スクロール可能にし、要素が見切れないようにする */
+.overlay--scroll{
+  justify-content: flex-start;
+  padding-top: 40px;
+  padding-bottom: 40px;
 }
 
 .overlay-title{
