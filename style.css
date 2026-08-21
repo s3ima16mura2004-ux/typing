@@ -759,7 +759,10 @@ body{
 
 .result-stats{
   display: flex;
-  gap: 28px;
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 14px;
+  column-gap: 24px;
   margin: 0 0 30px;
 }
 
@@ -817,6 +820,18 @@ body{
   background: linear-gradient(90deg, var(--gold), var(--pink));
   border-color: transparent;
   font-weight: 700;
+}
+
+.setlist-tag.miss{
+  color: var(--miss);
+  background: rgba(255, 77, 94, 0.1);
+  border-color: rgba(255, 77, 94, 0.3);
+}
+
+.result-unit{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-dim);
 }
 
 .result-stats > div{ display: flex; flex-direction: column; align-items: center; gap: 4px; }

@@ -65,10 +65,13 @@ const el = {
   resultScore: document.getElementById("resultScore"),
   resultChars: document.getElementById("resultChars"),
   resultAcc: document.getElementById("resultAcc"),
+  resultSpeed: document.getElementById("resultSpeed"),
   trendWrap: document.getElementById("trendWrap"),
   trendCanvas: document.getElementById("trendCanvas"),
   setlistWrap: document.getElementById("setlistWrap"),
   setlistList: document.getElementById("setlistList"),
+  missedWrap: document.getElementById("missedWrap"),
+  missedList: document.getElementById("missedList"),
   perfectBonusNote: document.getElementById("perfectBonusNote"),
   newTitles: document.getElementById("newTitles"),
   retryBtn: document.getElementById("retryBtn"),
@@ -368,6 +371,8 @@ function initState(difficulty, practice, isDaily, isWeak, isDuel, duelSeed) {
     finalSpurt: false,
     scoreTrace: [],
     setlist: [],
+    missedWords: {}, // { 単語: ミス回数 } その回でミスした単語ごとの回数
+    startedAt: Date.now(), // 練習モードなど、タイマーが動かない場合の実測用
     typed: "",       // ローマ字入力の進捗
     typedKana: "",   // かな入力の進捗
     litCount: 0,
@@ -572,7 +577,10 @@ function onMissKeystroke() {
   state.combo = 0;
   state.hype = Math.max(0, state.hype - cfg.missPenalty);
   if (state.hype < 100) state.hypeCelebrated = false;
-  if (state.current) recordWordMiss(state.current.word);
+  if (state.current) {
+    recordWordMiss(state.current.word); // 累計の苦手記録（苦手克服モード用）
+    state.missedWords[state.current.word] = (state.missedWords[state.current.word] || 0) + 1; // 今回のラウンドだけの記録
+  }
   flashMiss();
   sfxMiss();
   vibrate([25, 40, 25]);
@@ -826,6 +834,26 @@ function renderSetlist() {
     .join("");
 }
 
+function renderMissedWords() {
+  const entries = Object.entries(state.missedWords || {});
+  if (entries.length === 0) {
+    el.missedWrap.hidden = true;
+    return;
+  }
+  el.missedWrap.hidden = false;
+  entries.sort((a, b) => b[1] - a[1]); // ミスが多い順
+  el.missedList.innerHTML = entries
+    .map(([word, count]) => `<span class="setlist-tag miss">${word} ×${count}</span>`)
+    .join("");
+}
+
+function calcElapsedSeconds() {
+  if (state.practice) {
+    return Math.max(1, Math.round((Date.now() - state.startedAt) / 1000));
+  }
+  return Math.max(1, GAME_SECONDS - state.timeLeft);
+}
+
 function finishDuelRound() {
   const result = {
     score: state.score,
@@ -892,6 +920,8 @@ function endGame() {
 
   const totalChars = state.correctChars + state.missChars;
   const acc = totalChars === 0 ? 0 : Math.round((state.correctChars / totalChars) * 100);
+  const elapsedSec = calcElapsedSeconds();
+  const charsPerMinute = Math.round((state.correctChars / elapsedSec) * 60);
 
   const ctx = {
     score: state.score,
@@ -911,6 +941,7 @@ function endGame() {
   recordRun(ctx);
   renderTrendChart();
   renderSetlist();
+  renderMissedWords();
   const newTitles = evaluateTitles(ctx);
 
   el.perfectBonusNote.hidden = !perfectBonus;
@@ -939,6 +970,7 @@ function endGame() {
   el.resultScore.textContent = state.score;
   el.resultChars.textContent = state.correctChars;
   el.resultAcc.textContent = `${acc}%`;
+  el.resultSpeed.textContent = `${charsPerMinute}`;
   renderNewTitles(newTitles);
   el.pauseOverlay.hidden = true;
   el.resultOverlay.hidden = false;

@@ -133,6 +133,7 @@
       <div><span class="hud-label">SCORE</span><span class="result-num" id="resultScore">0</span></div>
       <div><span class="hud-label">正打数</span><span class="result-num" id="resultChars">0</span></div>
       <div><span class="hud-label">正答率</span><span class="result-num" id="resultAcc">0%</span></div>
+      <div><span class="hud-label">平均速度</span><span class="result-num" id="resultSpeed">0</span><span class="result-unit">文字/分</span></div>
     </div>
     <div class="trend-wrap" id="trendWrap" hidden>
       <span class="hud-label">直近のスコア推移</span>
@@ -141,6 +142,10 @@
     <div class="setlist-wrap" id="setlistWrap" hidden>
       <span class="hud-label">本日のセットリスト</span>
       <div class="setlist" id="setlistList"></div>
+    </div>
+    <div class="setlist-wrap" id="missedWrap" hidden>
+      <span class="hud-label">ミスした単語</span>
+      <div class="setlist" id="missedList"></div>
     </div>
     <div class="new-titles" id="newTitles" hidden></div>
     <button class="overlay-btn" id="retryBtn">アンコール（もう一度）</button>
