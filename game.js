@@ -16,7 +16,17 @@ const WEAK_POOL_SIZE = 12;
 const FINAL_SPURT_THRESHOLD = 10;
 const FINAL_SPURT_MULT = 1.5;
 const BONUS_WORD_CHANCE = 0.12;
+const BOSS_WORD_CHANCE = 0.03;
+const BOSS_WORD_MULT = 3;
 const PERFECT_BONUS_RATE = 0.2;
+const MISSION_BONUS_RATE = 0.1;
+const SKILL_COMBO_STEP = 10; // このコンボ数の倍数に達するたびにスキルが1回チャージされる
+const FEVER_MULT = 2;
+const FEVER_DURATION_MS = 5000;
+const STAR_TIME_MULT = 2;
+const STAR_TIME_DURATION_MS = 8000;
+const SPEED_DEMON_MS = 1500;
+const SABOTAGE_MAX_PER_MATCH = 2;
 
 const el = {
   crowd: document.getElementById("crowd"),
@@ -35,6 +45,11 @@ const el = {
   duelPlayerBadge: document.getElementById("duelPlayerBadge"),
   prompter: document.getElementById("prompter"),
   bonusWordTag: document.getElementById("bonusWordTag"),
+  bossWordTag: document.getElementById("bossWordTag"),
+  skillBtn: document.getElementById("skillBtn"),
+  reactionPopup: document.getElementById("reactionPopup"),
+  missionBanner: document.getElementById("missionBanner"),
+  missionBannerList: document.getElementById("missionBannerList"),
   promptKana: document.getElementById("promptKana"),
   promptWord: document.getElementById("promptWord"),
   promptRomaji: document.getElementById("promptRomaji"),
@@ -52,6 +67,7 @@ const el = {
   titlesBtn: document.getElementById("titlesBtn"),
   titlesOverlay: document.getElementById("titlesOverlay"),
   titlesCount: document.getElementById("titlesCount"),
+  collectionRow: document.getElementById("collectionRow"),
   titlesList: document.getElementById("titlesList"),
   titlesCloseBtn: document.getElementById("titlesCloseBtn"),
   rankingBtn: document.getElementById("rankingBtn"),
@@ -72,6 +88,11 @@ const el = {
   setlistList: document.getElementById("setlistList"),
   missedWrap: document.getElementById("missedWrap"),
   missedList: document.getElementById("missedList"),
+  growthWrap: document.getElementById("growthWrap"),
+  growthList: document.getElementById("growthList"),
+  missionResultWrap: document.getElementById("missionResultWrap"),
+  missionResultList: document.getElementById("missionResultList"),
+  missionBonusNote: document.getElementById("missionBonusNote"),
   perfectBonusNote: document.getElementById("perfectBonusNote"),
   newTitles: document.getElementById("newTitles"),
   retryBtn: document.getElementById("retryBtn"),
@@ -368,11 +389,33 @@ function initState(difficulty, practice, isDaily, isWeak, isDuel, duelSeed) {
     usedRomaji: false,
     current: null,
     isBonusWord: false,
+    isBossWord: false,
+    bossWordClearedThisRound: false,
     finalSpurt: false,
     scoreTrace: [],
     setlist: [],
     missedWords: {}, // { 単語: ミス回数 } その回でミスした単語ごとの回数
     startedAt: Date.now(), // 練習モードなど、タイマーが動かない場合の実測用
+    wordStartedAt: Date.now(), // 「爆速シンガー」称号の判定用
+    fastestWordMs: null,
+    // ---- スキルシステム ----
+    lastSkillMilestone: 0, // 直前にスキルチャージが発生したコンボの節目
+    skillCharge: false,    // スキル発動ボタンを押せる状態か
+    skillActive: null,     // "fever" が発動中なら文字列で入る
+    skillActiveUntil: 0,
+    missGuardCharges: 0,   // 🛡️ ミスガードの残り回数
+    nextBonusBoost: 1,     // 💎 ダブルスコアの倍率（通常1）
+    feverUsesThisRound: 0,
+    // ---- ランダムイベント ----
+    eventActive: null,     // "star" が発動中なら文字列で入る
+    eventActiveUntil: 0,
+    eventFireAt: null,     // イベントを発生させる残り時間のしきい値（秒）
+    eventFired: false,
+    // ---- ミッション ----
+    missions: [],
+    // ---- 対戦の妨害（オンラインのみ） ----
+    sabotagesSentThisMatch: 0,
+    shakeUntil: 0,
     typed: "",       // ローマ字入力の進捗
     typedKana: "",   // かな入力の進捗
     litCount: 0,
@@ -387,6 +430,8 @@ function renderPrompt() {
 
   el.prompter.classList.toggle("bonus-word", state.isBonusWord);
   el.bonusWordTag.hidden = !state.isBonusWord;
+  el.prompter.classList.toggle("boss-word", state.isBossWord);
+  el.bossWordTag.hidden = !state.isBossWord;
 
   const kanaAnswer = current.kana;
   const doneK = kanaAnswer.slice(0, typedKana.length);
@@ -415,8 +460,11 @@ function nextWord() {
   state.current = pickWord(state.current);
   state.typed = "";
   state.typedKana = "";
-  // デイリー・対戦モードは公平性のため、ボーナスワードの抽選をしない
-  state.isBonusWord = !state.isDaily && !state.isDuel && Math.random() < BONUS_WORD_CHANCE;
+  state.wordStartedAt = Date.now();
+  // デイリー・対戦モードは公平性のため、レアお題の抽選をしない
+  const eligibleForRareWord = !state.isDaily && !state.isDuel;
+  state.isBossWord = eligibleForRareWord && Math.random() < BOSS_WORD_CHANCE;
+  state.isBonusWord = !state.isBossWord && eligibleForRareWord && Math.random() < BONUS_WORD_CHANCE;
   renderPrompt();
 }
 
@@ -426,7 +474,10 @@ function comboMultiplier(combo) {
 }
 
 function getScoreMultiplier() {
-  return comboMultiplier(state.combo) * (state.finalSpurt ? FINAL_SPURT_MULT : 1);
+  const feverMult = state.skillActive === "fever" ? FEVER_MULT : 1;
+  const eventMult = state.eventActive === "star" ? STAR_TIME_MULT : 1;
+  const bossMult = state.isBossWord ? BOSS_WORD_MULT : 1;
+  return comboMultiplier(state.combo) * (state.finalSpurt ? FINAL_SPURT_MULT : 1) * feverMult * eventMult * bossMult;
 }
 
 function updateHud() {
@@ -440,6 +491,7 @@ function updateHud() {
   }
   el.hypeFill.style.width = `${state.hype}%`;
   el.hypeFill.classList.toggle("maxed", state.hype >= 100);
+  updateAudienceStage();
 
   const mult = comboMultiplier(state.combo);
   if (state.combo >= 3) {
@@ -451,6 +503,35 @@ function updateHud() {
   }
 
   updateGhostDiff();
+}
+
+// 客席の盛り上がり具合をHYPEゲージ5段階で見た目に反映する
+function updateAudienceStage() {
+  const stage = state.hype >= 80 ? 5 : state.hype >= 60 ? 4 : state.hype >= 40 ? 3 : state.hype >= 20 ? 2 : 1;
+  el.stage.dataset.audience = String(stage);
+}
+
+// コンボの節目ごとに客席の反応（絵文字）を一瞬表示する
+function showCrowdReaction(combo) {
+  let emoji = "👏";
+  if (combo >= 20) emoji = "🌈";
+  else if (combo >= 10) emoji = "🔥";
+  else if (combo >= 5) emoji = "🙌";
+  else return; // 4以下は演出なし（毎回出ると鬱陶しいため）
+
+  el.reactionPopup.textContent = emoji;
+  el.reactionPopup.classList.remove("show");
+  void el.reactionPopup.offsetWidth;
+  el.reactionPopup.classList.add("show");
+}
+
+let lastGhostSign = 0; // -1:負け越し中 / 0:互角 / 1:勝ち越し中（ラウンドごとにリセットする）
+
+function showGhostToast(text) {
+  el.reactionPopup.textContent = text;
+  el.reactionPopup.classList.remove("show", "toast");
+  void el.reactionPopup.offsetWidth;
+  el.reactionPopup.classList.add("show", "toast");
 }
 
 function updateGhostDiff() {
@@ -469,6 +550,14 @@ function updateGhostDiff() {
   el.ghostDiff.textContent = diff >= 0 ? `▲ ベストより+${diff}` : `▼ ベストより${diff}`;
   el.ghostDiff.classList.toggle("ahead", diff >= 0);
   el.ghostDiff.classList.toggle("behind", diff < 0);
+
+  const sign = diff > 0 ? 1 : diff < 0 ? -1 : 0;
+  if (sign !== lastGhostSign) {
+    if (lastGhostSign === -1 && sign === 1) showGhostToast("👑 追い抜いた！");
+    else if (lastGhostSign === -1 && sign === 0) showGhostToast("⚡ 追いついた！");
+    else if (lastGhostSign === 1 && sign <= 0) showGhostToast("😱 抜かれた！");
+    lastGhostSign = sign;
+  }
 }
 
 function getUnlockedPenlightColors() {
@@ -573,6 +662,15 @@ function onCorrectKeystroke() {
 
 function onMissKeystroke() {
   const cfg = DIFFICULTIES[state.difficulty];
+
+  // 🛡️ ミスガードのスキルが発動中なら、このミスを無効化する
+  if (state.missGuardCharges > 0) {
+    state.missGuardCharges -= 1;
+    showGhostToast("🛡️ ガード！");
+    sfxCorrect();
+    return;
+  }
+
   state.missChars += 1;
   state.combo = 0;
   state.hype = Math.max(0, state.hype - cfg.missPenalty);
@@ -586,23 +684,112 @@ function onMissKeystroke() {
   vibrate([25, 40, 25]);
 }
 
+/* =========================================================
+   スキルシステム（フィーバー / ミスガード / ダブルスコア）
+   コンボが10の倍数に到達するたびに1回チャージされ、
+   ボタンを押すとランダムに1つ発動する。
+   ========================================================= */
+
+const SKILL_TYPES = ["fever", "guard", "double"];
+
+function checkSkillCharge() {
+  const milestone = Math.floor(state.combo / SKILL_COMBO_STEP) * SKILL_COMBO_STEP;
+  if (milestone > 0 && milestone > state.lastSkillMilestone) {
+    state.lastSkillMilestone = milestone;
+    if (!state.skillCharge) {
+      state.skillCharge = true;
+      el.skillBtn.hidden = false;
+      el.skillBtn.classList.add("ready");
+    }
+  }
+}
+
+function activateSkill() {
+  if (!state || !state.running || !state.skillCharge) return;
+  state.skillCharge = false;
+  el.skillBtn.hidden = true;
+  el.skillBtn.classList.remove("ready");
+
+  const kind = SKILL_TYPES[Math.floor(Math.random() * SKILL_TYPES.length)];
+  if (kind === "fever") {
+    state.skillActive = "fever";
+    state.skillActiveUntil = Date.now() + FEVER_DURATION_MS;
+    state.feverUsesThisRound += 1;
+    el.stage.classList.add("fever");
+    showGhostToast("🔥 フィーバー発動！");
+    setTimeout(() => {
+      if (state && state.skillActive === "fever") {
+        state.skillActive = null;
+        el.stage.classList.remove("fever");
+      }
+    }, FEVER_DURATION_MS);
+  } else if (kind === "guard") {
+    state.missGuardCharges += 1;
+    showGhostToast("🛡️ ミスガード獲得！");
+  } else {
+    state.nextBonusBoost = 2;
+    showGhostToast("💎 次のボーナスワードが2倍！");
+  }
+  sfxHypeMax();
+}
+
+if (el.skillBtn) {
+  el.skillBtn.addEventListener("click", activateSkill);
+}
+
+function showBossBreakBanner() {
+  el.hypeBanner.textContent = "BOSS BREAK!!";
+  el.hypeBanner.classList.remove("show");
+  void el.hypeBanner.offsetWidth;
+  el.hypeBanner.classList.add("show");
+  sfxMiracle();
+  vibrate([50, 80, 50, 80, 200]);
+}
+
 function onWordComplete() {
   const mult = getScoreMultiplier();
   state.combo += 1;
   state.maxCombo = Math.max(state.maxCombo, state.combo);
 
+  const wordTimeMs = Date.now() - state.wordStartedAt;
+  if (state.fastestWordMs === null || wordTimeMs < state.fastestWordMs) {
+    state.fastestWordMs = wordTimeMs;
+  }
+
   let points = Math.round(20 * mult);
   const wasBonus = state.isBonusWord;
+  const wasBoss = state.isBossWord;
   if (wasBonus) {
-    points *= 2;
+    points *= 2 * state.nextBonusBoost;
+    state.nextBonusBoost = 1;
     state.hype = 100;
   }
+  if (wasBoss) {
+    state.bossWordClearedThisRound = true;
+    showBossBreakBanner();
+  }
   state.score += points;
-  state.setlist.push({ word: state.current.word, bonus: wasBonus });
+  state.setlist.push({ word: state.current.word, bonus: wasBonus, boss: wasBoss });
 
   burstSpotlight();
   sfxWordComplete();
   vibrate(30);
+  showCrowdReaction(state.combo);
+  checkSkillCharge();
+
+  // オンライン対戦中は、コンボの節目で相手に軽い妨害を送れる（1試合2回まで）
+  if (
+    state.isDuel &&
+    typeof onlineActive !== "undefined" &&
+    onlineActive &&
+    state.combo > 0 &&
+    state.combo % SKILL_COMBO_STEP === 0 &&
+    state.sabotagesSentThisMatch < SABOTAGE_MAX_PER_MATCH &&
+    typeof sendSabotage === "function"
+  ) {
+    state.sabotagesSentThisMatch += 1;
+    sendSabotage();
+  }
 
   if (wasBonus && state.hype >= 100 && !state.hypeCelebrated) {
     state.hypeCelebrated = true;
@@ -674,6 +861,38 @@ function clearFinalSpurt() {
   setBgmFast(false);
 }
 
+function triggerStarTime() {
+  state.eventActive = "star";
+  state.eventActiveUntil = Date.now() + STAR_TIME_DURATION_MS;
+  el.stage.classList.add("star-time");
+  showGhostToast("🌟 STAR TIME！スコア2倍！");
+  sfxHypeMax();
+  setTimeout(() => {
+    if (state && state.eventActive === "star") {
+      state.eventActive = null;
+      el.stage.classList.remove("star-time");
+    }
+  }, STAR_TIME_DURATION_MS);
+}
+
+function clearRoundEffects() {
+  el.stage.classList.remove("fever", "star-time", "shake");
+  if (el.skillBtn) {
+    el.skillBtn.hidden = true;
+    el.skillBtn.classList.remove("ready");
+  }
+}
+
+// オンライン対戦で相手からの妨害を受けた時の演出（online.js から呼ばれる）
+function triggerSabotageEffect() {
+  el.stage.classList.remove("shake");
+  void el.stage.offsetWidth;
+  el.stage.classList.add("shake");
+  showGhostToast("🌪️ 妨害された！");
+  vibrate([30, 50, 30, 50, 30]);
+  setTimeout(() => el.stage.classList.remove("shake"), 700);
+}
+
 function tick() {
   if (state.practice) return; // 練習モードはタイマー無し
   state.timeLeft -= 1;
@@ -681,6 +900,17 @@ function tick() {
 
   if (!state.finalSpurt && state.timeLeft > 0 && state.timeLeft <= FINAL_SPURT_THRESHOLD) {
     triggerFinalSpurt();
+  }
+
+  // ランダムイベント（🌟 STAR TIME）：ラウンドに1回だけ、狙った時間帯で発生させる
+  if (
+    !state.eventFired &&
+    state.eventFireAt !== null &&
+    state.timeLeft <= state.eventFireAt &&
+    state.timeLeft > FINAL_SPURT_THRESHOLD
+  ) {
+    state.eventFired = true;
+    triggerStarTime();
   }
 
   updateHud();
@@ -696,6 +926,56 @@ function rankFor(score) {
   return "路上ライブ初日";
 }
 
+/* =========================================================
+   ミッション（3つのお題を毎回ランダムに出す）
+   スコアアタックの通常プレイのみが対象（デイリー・苦手克服・対戦は除外）。
+   ========================================================= */
+
+function buildMissionPool(difficulty) {
+  const scoreTargets = { easy: 150, normal: 300, hard: 500, expert: 700 };
+  const scoreTarget = scoreTargets[difficulty] || 300;
+  return [
+    {
+      id: "score",
+      label: `${scoreTarget}点以上とる`,
+      check: (s) => s.score >= scoreTarget,
+    },
+    {
+      id: "combo",
+      label: "8コンボ以上つなげる",
+      check: (s) => s.maxCombo >= 8,
+    },
+    {
+      id: "bonus",
+      label: "ボーナスワードを2回成功させる",
+      check: (s) => s.setlist.filter((e) => e.bonus).length >= 2,
+    },
+    {
+      id: "lowmiss",
+      label: "ミスを3回以下におさえる",
+      check: (s) => s.missChars <= 3,
+    },
+  ];
+}
+
+function generateMissions(difficulty) {
+  const pool = buildMissionPool(difficulty);
+  // シャッフルして3つ選ぶ
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 3).map((m) => ({ id: m.id, label: m.label, check: m.check, cleared: false }));
+}
+
+function showMissionBanner(missions) {
+  el.missionBannerList.innerHTML = missions.map((m) => `<li>${m.label}</li>`).join("");
+  el.missionBanner.hidden = false;
+  el.missionBanner.classList.remove("show");
+  void el.missionBanner.offsetWidth;
+  el.missionBanner.classList.add("show");
+  setTimeout(() => {
+    el.missionBanner.hidden = true;
+  }, 3600);
+}
+
 function startGame(isDaily, isWeak, isDuel, duelSeed) {
   ensureAudio();
   const practice = (isDaily || isWeak || isDuel) ? false : !!(el.practiceToggle && el.practiceToggle.checked);
@@ -704,6 +984,15 @@ function startGame(isDaily, isWeak, isDuel, duelSeed) {
   const difficulty = (isDaily || isWeak) ? "normal" : (isDuel && local2pMatch) ? local2pMatch.difficulty : selectedDifficulty;
   state = initState(difficulty, practice, isDaily, isWeak, isDuel, duelSeed);
   state.running = true;
+
+  // ミッション・ランダムイベントは、通常のスコアアタック（練習・デイリー・苦手克服・対戦以外）だけが対象
+  const isStandardRun = !practice && !isDaily && !isWeak && !isDuel;
+  if (isStandardRun) {
+    state.missions = generateMissions(difficulty);
+    state.eventFireAt = FINAL_SPURT_THRESHOLD + 5 + Math.floor(Math.random() * (GAME_SECONDS - FINAL_SPURT_THRESHOLD - 20));
+  }
+
+  lastGhostSign = 0;
   buildCrowd();
   nextWord();
   updateHud();
@@ -712,7 +1001,8 @@ function startGame(isDaily, isWeak, isDuel, duelSeed) {
   el.pauseOverlay.hidden = true;
   el.hypeBanner.classList.remove("show");
   el.stage.classList.remove("final-spurt");
-  el.prompter.classList.remove("bonus-word");
+  el.prompter.classList.remove("bonus-word", "boss-word");
+  clearRoundEffects();
   const isOnlineRound = typeof onlineActive !== "undefined" && onlineActive;
   el.duelPlayerBadge.hidden = !isDuel || isOnlineRound;
   if (isDuel && !isOnlineRound) {
@@ -722,6 +1012,10 @@ function startGame(isDaily, isWeak, isDuel, duelSeed) {
   el.stage.classList.add("compact"); // プレイ中はステージを小さくしてキーボードのスペースを確保する
   state.timerId = setInterval(tick, 1000);
   startBgm();
+
+  if (isStandardRun) {
+    showMissionBanner(state.missions);
+  }
 
   // 「端末のキーボード」モードならゲーム開始と同時にフォーカスして開く
   if (nativeInput && !nativeInput.hidden) {
@@ -895,11 +1189,60 @@ function showDuelFinalResult() {
   el.duelResultOverlay.hidden = false;
 }
 
+function evaluateMissions() {
+  if (!state.missions || state.missions.length === 0) return { missions: [], allCleared: false };
+  const missions = state.missions.map((m) => ({ label: m.label, cleared: m.check(state) }));
+  const allCleared = missions.length > 0 && missions.every((m) => m.cleared);
+  return { missions, allCleared };
+}
+
+function renderMissionResult(missionInfo) {
+  if (!missionInfo.missions || missionInfo.missions.length === 0) {
+    el.missionResultWrap.hidden = true;
+    el.missionBonusNote.hidden = true;
+    return;
+  }
+  el.missionResultWrap.hidden = false;
+  el.missionResultList.innerHTML = missionInfo.missions
+    .map((m) => `<li class="${m.cleared ? "cleared" : ""}">${m.cleared ? "✅" : "❌"} ${m.label}</li>`)
+    .join("");
+  el.missionBonusNote.hidden = !missionInfo.allCleared;
+}
+
+function renderGrowthComparison(prevRun, ctx, acc) {
+  if (!prevRun) {
+    el.growthWrap.hidden = true;
+    return;
+  }
+  el.growthWrap.hidden = false;
+  const prevTotal = prevRun.correctChars + prevRun.missChars;
+  const prevAcc = prevTotal === 0 ? 0 : Math.round((prevRun.correctChars / prevTotal) * 100);
+
+  const rows = [
+    { label: "スコア", prev: prevRun.score, now: ctx.score },
+    { label: "最高コンボ", prev: prevRun.maxCombo || 0, now: ctx.maxCombo },
+    { label: "正答率", prev: prevAcc, now: acc, unit: "%" },
+  ];
+
+  el.growthList.innerHTML = rows
+    .map((r) => {
+      const diff = r.now - r.prev;
+      const arrow = diff > 0 ? "↑" : diff < 0 ? "↓" : "→";
+      const cls = diff > 0 ? "up" : diff < 0 ? "down" : "same";
+      const unit = r.unit || "";
+      return (
+        `<li class="${cls}">${r.label}　${r.prev}${unit} → ${r.now}${unit} ${arrow}</li>`
+      );
+    })
+    .join("");
+}
+
 function endGame() {
   state.running = false;
   clearInterval(state.timerId);
   stopBgm();
   clearFinalSpurt();
+  clearRoundEffects();
 
   if (typeof onlineActive !== "undefined" && onlineActive) {
     finishOnlineRound();
@@ -909,6 +1252,14 @@ function endGame() {
   if (state.isDuel) {
     finishDuelRound();
     return;
+  }
+
+  const isStandardRun = !state.practice && !state.isDaily && !state.isWeak;
+
+  // ミッション（3つ全部クリアで追加ボーナス）を先に判定してからスコアに反映する
+  const missionInfo = isStandardRun ? evaluateMissions() : { missions: [], allCleared: false };
+  if (missionInfo.allCleared) {
+    state.score = Math.round(state.score * (1 + MISSION_BONUS_RATE));
   }
 
   // ノーミスならパーフェクトボーナスとしてスコアを+20%する（練習モードは対象外）
@@ -923,6 +1274,13 @@ function endGame() {
   const elapsedSec = calcElapsedSeconds();
   const charsPerMinute = Math.round((state.correctChars / elapsedSec) * 60);
 
+  // 前回の同条件のプレイと比較するため、記録する前に履歴から拾っておく
+  const prevRun = isStandardRun
+    ? loadRunHistory()
+        .filter((h) => !h.practice && !h.isDaily && !h.isWeak && !h.isDuel && h.difficulty === state.difficulty)
+        .slice(-1)[0] || null
+    : null;
+
   const ctx = {
     score: state.score,
     correctChars: state.correctChars,
@@ -934,14 +1292,24 @@ function endGame() {
     maxCombo: state.maxCombo,
     usedKana: state.usedKana,
     usedRomaji: state.usedRomaji,
+    bossWordCleared: state.bossWordClearedThisRound,
+    fastestWordMs: state.fastestWordMs,
+    feverUsesThisRound: state.feverUsesThisRound,
     hour: new Date().getHours(),
     date: new Date().toISOString(),
   };
 
   recordRun(ctx);
+
+  // 記録した直後のローカルランキングで1位になっていれば称号の対象にする
+  const top = getLocalRanking(1)[0];
+  ctx.isRankingFirst = !state.practice && !!top && top.date === ctx.date && top.score === ctx.score;
+
   renderTrendChart();
   renderSetlist();
   renderMissedWords();
+  renderGrowthComparison(prevRun, ctx, acc);
+  renderMissionResult(missionInfo);
   const newTitles = evaluateTitles(ctx);
 
   el.perfectBonusNote.hidden = !perfectBonus;
@@ -959,11 +1327,15 @@ function endGame() {
   } else {
     const { isNew, best } = saveBestScoreIfHigher(state.difficulty, state.score);
     el.resultRank.textContent = rankFor(state.score);
-    el.resultBest.innerHTML = isNew
-      ? `<span class="is-new">自己ベスト更新！ ${best}</span>`
-      : `自己ベスト（${DIFFICULTIES[state.difficulty].label}）：${best}`;
     if (isNew) {
+      el.resultBest.innerHTML = `<span class="is-new">自己ベスト更新！ ${best}</span>`;
       saveBestTrace(state.difficulty, state.scoreTrace, state.score);
+    } else {
+      const gap = best - state.score;
+      el.resultBest.textContent =
+        gap > 0
+          ? `自己ベストまであと${gap}点（ベスト：${best}）`
+          : `自己ベスト（${DIFFICULTIES[state.difficulty].label}）：${best}`;
     }
   }
 
@@ -1011,6 +1383,7 @@ function backToMenu() {
   if (state) clearInterval(state.timerId);
   stopBgm();
   clearFinalSpurt();
+  clearRoundEffects();
   if (typeof cleanupOnlineRoom === "function") cleanupOnlineRoom();
   state = null;
   local2pMatch = null;
@@ -1141,11 +1514,15 @@ el.weakBtn.addEventListener("click", () => beginWithCountdown(false, true));
 function renderTitlesOverlay() {
   const unlocked = new Set(loadUnlockedTitles());
   el.titlesCount.textContent = `${unlocked.size} / ${TITLES.length} 個の称号を獲得`;
+  if (el.collectionRow) {
+    const items = getCollectedItems();
+    el.collectionRow.textContent = items.length > 0 ? items.join(" ") : "まだアイテムはありません";
+  }
   el.titlesList.innerHTML = TITLES.map((t) => {
     if (unlocked.has(t.id)) {
       return (
         `<div class="title-card unlocked">` +
-        `<span class="title-icon">🏆</span>` +
+        `<span class="title-icon">${t.item || "🏆"}</span>` +
         `<div><div class="title-name">${t.name}</div><div class="title-desc">${t.desc}</div></div>` +
         `</div>`
       );

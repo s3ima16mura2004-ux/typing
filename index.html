@@ -57,10 +57,23 @@
   <!-- プロンプター（お題表示） -->
   <main class="prompter" id="prompter">
     <span class="bonus-word-tag" id="bonusWordTag" hidden>✨ ボーナスワード</span>
+    <span class="boss-word-tag" id="bossWordTag" hidden>⚠️ BOSS WORD</span>
     <p class="prompter-kana" id="promptKana">&nbsp;</p>
     <h1 class="prompter-word" id="promptWord">START</h1>
     <p class="prompter-romaji" id="promptRomaji">&nbsp;</p>
   </main>
+
+  <!-- 客席の反応・ライバル比較などの一瞬だけ出るポップアップ -->
+  <div class="reaction-popup" id="reactionPopup" hidden></div>
+
+  <!-- スキル発動ボタン（コンボの節目でチャージされる） -->
+  <button type="button" class="skill-btn" id="skillBtn" hidden>✨ スキル発動</button>
+
+  <!-- ラウンド開始直後に出る「今回のミッション」表示 -->
+  <div class="mission-banner" id="missionBanner" hidden>
+    <p class="mission-banner-title">TODAY'S MISSION</p>
+    <ul id="missionBannerList"></ul>
+  </div>
 
   <!-- 2人対戦中のプレイヤー表示 -->
   <div class="duel-player-badge" id="duelPlayerBadge" hidden></div>
@@ -147,6 +160,15 @@
       <span class="hud-label">ミスした単語</span>
       <div class="setlist" id="missedList"></div>
     </div>
+    <div class="growth-wrap" id="growthWrap" hidden>
+      <span class="hud-label">前回との比較</span>
+      <ul class="growth-list" id="growthList"></ul>
+    </div>
+    <div class="mission-result-wrap" id="missionResultWrap" hidden>
+      <span class="hud-label">TODAY'S MISSION 結果</span>
+      <ul class="mission-result-list" id="missionResultList"></ul>
+      <p class="mission-bonus-note" id="missionBonusNote" hidden>🎁 全ミッション達成ボーナス +10%！</p>
+    </div>
     <div class="new-titles" id="newTitles" hidden></div>
     <button class="overlay-btn" id="retryBtn">アンコール（もう一度）</button>
     <button class="overlay-btn overlay-btn--sub" id="shareBtn">結果を画像で保存</button>
@@ -170,6 +192,7 @@
   <div class="overlay list-overlay" id="titlesOverlay" hidden>
     <h2 class="overlay-title">称号一覧</h2>
     <p class="best-note" id="titlesCount">0 / 0 個の称号を獲得</p>
+    <p class="collection-row" id="collectionRow">まだアイテムはありません</p>
     <div class="scroll-list" id="titlesList"></div>
     <button class="overlay-btn overlay-btn--sub" id="titlesCloseBtn">閉じる</button>
   </div>

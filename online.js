@@ -131,10 +131,12 @@ function createOnlineRoom() {
           startAt: null,
           hostResult: null,
           guestResult: null,
+          hostSabotageAt: null,
+          guestSabotageAt: null,
           createdAt: Date.now(),
         })
         .then(() => {
-          onlineMatch = { roomCode: code, role: "host", resultShown: false, countdownScheduled: false };
+          onlineMatch = { roomCode: code, role: "host", resultShown: false, countdownScheduled: false, lastSeenSabotage: null };
           showOnlineWaitScreen(code, true);
           attachRoomListener(code, "host");
         });
@@ -179,7 +181,7 @@ function joinOnlineRoom() {
       // null かどうかだけで判定する（以前は undefined も弾いてしまい、参加が
       // 成功しているのに画面が進まないバグになっていた）。
       if (result === null) return; // 上でエラー表示済み、もしくは既存チェックで弾かれた
-      onlineMatch = { roomCode: code, role: "guest", resultShown: false, countdownScheduled: false };
+      onlineMatch = { roomCode: code, role: "guest", resultShown: false, countdownScheduled: false, lastSeenSabotage: null };
       showOnlineWaitScreen(code, false);
       attachRoomListener(code, "guest");
     })
@@ -222,6 +224,14 @@ function attachRoomListener(code, role) {
 
 function handleRoomUpdate(data, role) {
   if (!onlineMatch) return;
+
+  // 相手からの妨害（コンボ節目で送られる軽い演出）を検知する
+  const oppField = role === "host" ? "guestSabotageAt" : "hostSabotageAt";
+  const oppSabotageAt = data[oppField];
+  if (oppSabotageAt && oppSabotageAt !== onlineMatch.lastSeenSabotage) {
+    onlineMatch.lastSeenSabotage = oppSabotageAt;
+    if (typeof triggerSabotageEffect === "function") triggerSabotageEffect();
+  }
 
   // 両者そろって、結果もそろっていれば最終結果を表示する
   if (data.hostResult && data.guestResult) {
@@ -273,6 +283,13 @@ function scheduleOnlineStart(startAt, seed, difficulty) {
 /* =========================================================
    ラウンド終了時の処理（game.js の endGame から呼ばれる）
    ========================================================= */
+
+// コンボの節目で相手に軽い妨害（画面が少し揺れる演出）を送る（game.js から呼ばれる）
+function sendSabotage() {
+  if (!onlineMatch) return;
+  const field = onlineMatch.role === "host" ? { hostSabotageAt: Date.now() } : { guestSabotageAt: Date.now() };
+  roomRef(onlineMatch.roomCode).update(field).catch(() => {});
+}
 
 function finishOnlineRound() {
   const result = { score: state.score, correct: state.correctChars, miss: state.missChars };
