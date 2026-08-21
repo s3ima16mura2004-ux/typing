@@ -1035,9 +1035,11 @@ function setKbdMode(mode) {
 }
 
 // タッチ専用端末（スマホ・タブレット）では、IME変換に起因する誤動作を避けるため
-// 「端末のキーボード」を選択肢から外し、かな専用キーボードだけを表示する。
-// マウス・トラックパッドが使える環境（hover:hover）ではこれまで通り選べるようにする。
-const isTouchOnlyDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+// 「ローマ字」「端末のキーボード」を選択肢から外し、かな専用キーボードだけを表示する。
+// hover/pointerのメディアクエリだけでは判定しきれない端末があるため、
+// スマホのユーザーエージェント判定もあわせて行い、より確実に検出する。
+const isMobileUA = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const isTouchOnlyDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches || isMobileUA;
 
 if (kbdToggle) {
   if (isTouchOnlyDevice) {

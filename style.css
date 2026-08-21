@@ -968,57 +968,57 @@ body{
   .mini-prompter{
     padding: 6px 12px;
   }
+}
 
-  /* メニュー画面（スタート画面）の余白・サイズを詰めて、スクロールなしで収まりやすくする */
-  .overlay--scroll{
-    padding-top: 18px;
-    padding-bottom: 18px;
-  }
+/* メニュー画面（スタート画面）の余白・サイズを詰めて、PC・スマホどちらでもスクロールなしで収まりやすくする */
+.overlay--scroll{
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
 
-  .overlay-title{
-    font-size: clamp(22px, 6vw, 32px);
-    margin-bottom: 8px;
-  }
+.overlay-title{
+  font-size: clamp(22px, 6vw, 32px);
+  margin-bottom: 8px;
+}
 
-  .overlay-text{
-    font-size: 12px;
-    line-height: 1.5;
-    margin-bottom: 12px;
-  }
+.overlay-text{
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
 
-  .diff-grid{
-    margin-bottom: 10px;
-    gap: 6px;
-  }
+.diff-grid{
+  margin-bottom: 10px;
+  gap: 6px;
+}
 
-  .diff-btn{
-    padding: 7px 6px;
-  }
+.diff-btn{
+  padding: 7px 6px;
+}
 
-  .practice-toggle{
-    margin-bottom: 10px;
-    font-size: 11px;
-  }
+.practice-toggle{
+  margin-bottom: 10px;
+  font-size: 11px;
+}
 
-  .daily-btn{
-    padding: 7px 12px;
-    margin-bottom: 8px;
-  }
+.daily-btn{
+  padding: 7px 12px;
+  margin-bottom: 8px;
+}
 
-  .menu-links{
-    margin-bottom: 10px;
-  }
+.menu-links{
+  margin-bottom: 10px;
+}
 
-  .menu-links .overlay-btn--sub{
-    padding: 8px 14px;
-  }
+.menu-links .overlay-btn--sub{
+  padding: 8px 14px;
+}
 
-  .best-note{
-    margin-bottom: 12px;
-  }
+.best-note{
+  margin-bottom: 12px;
+}
 
-  .overlay-btn{
-    padding: 11px 28px;
-    font-size: 15px;
-  }
+.overlay-btn{
+  padding: 11px 28px;
+  font-size: 15px;
 }
