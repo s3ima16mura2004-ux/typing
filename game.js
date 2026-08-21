@@ -8,10 +8,15 @@
 const GAME_SECONDS = 60;
 const CROWD_SIZE = 63; // 9列 x 7段
 const BEST_SCORE_KEY = "karaokeTyping.bestScores";
+const BEST_TRACE_KEY = "karaokeTyping.bestTraces";
 const DIFF_KEY = "karaokeTyping.difficulty";
 const RUN_HISTORY_KEY = "karaokeTyping.runHistory";
 const MISS_STATS_KEY = "karaokeTyping.missStats";
 const WEAK_POOL_SIZE = 12;
+const FINAL_SPURT_THRESHOLD = 10;
+const FINAL_SPURT_MULT = 1.5;
+const BONUS_WORD_CHANCE = 0.12;
+const PERFECT_BONUS_RATE = 0.2;
 
 const el = {
   crowd: document.getElementById("crowd"),
@@ -26,6 +31,10 @@ const el = {
   timeValue: document.getElementById("timeValue"),
   hypeFill: document.getElementById("hypeFill"),
   hypeBanner: document.getElementById("hypeBanner"),
+  ghostDiff: document.getElementById("ghostDiff"),
+  duelPlayerBadge: document.getElementById("duelPlayerBadge"),
+  prompter: document.getElementById("prompter"),
+  bonusWordTag: document.getElementById("bonusWordTag"),
   promptKana: document.getElementById("promptKana"),
   promptWord: document.getElementById("promptWord"),
   promptRomaji: document.getElementById("promptRomaji"),
@@ -58,6 +67,9 @@ const el = {
   resultAcc: document.getElementById("resultAcc"),
   trendWrap: document.getElementById("trendWrap"),
   trendCanvas: document.getElementById("trendCanvas"),
+  setlistWrap: document.getElementById("setlistWrap"),
+  setlistList: document.getElementById("setlistList"),
+  perfectBonusNote: document.getElementById("perfectBonusNote"),
   newTitles: document.getElementById("newTitles"),
   retryBtn: document.getElementById("retryBtn"),
   shareBtn: document.getElementById("shareBtn"),
@@ -70,10 +82,27 @@ const el = {
   countdownNum: document.getElementById("countdownNum"),
   practiceToggle: document.getElementById("practiceToggle"),
   kbdArea: document.getElementById("kbdArea"),
+  local2pBtn: document.getElementById("local2pBtn"),
+  duelIntroOverlay: document.getElementById("duelIntroOverlay"),
+  duelIntroTitle: document.getElementById("duelIntroTitle"),
+  duelIntroText: document.getElementById("duelIntroText"),
+  duelIntroBtn: document.getElementById("duelIntroBtn"),
+  duelResultOverlay: document.getElementById("duelResultOverlay"),
+  duelWinnerTitle: document.getElementById("duelWinnerTitle"),
+  duelP1Card: document.getElementById("duelP1Card"),
+  duelP1Score: document.getElementById("duelP1Score"),
+  duelP1Sub: document.getElementById("duelP1Sub"),
+  duelP2Card: document.getElementById("duelP2Card"),
+  duelP2Score: document.getElementById("duelP2Score"),
+  duelP2Sub: document.getElementById("duelP2Sub"),
+  duelRetryBtn: document.getElementById("duelRetryBtn"),
+  duelBackBtn: document.getElementById("duelBackBtn"),
 };
 
 let state = null;
 let selectedDifficulty = "normal";
+let local2pMatch = null;
+let duelPendingPlayer = null;
 
 /* =========================================================
    自己ベストの記録
@@ -101,6 +130,26 @@ function saveBestScoreIfHigher(diff, score) {
     safeSet(BEST_SCORE_KEY, JSON.stringify(scores));
   }
   return { isNew, best: isNew ? score : prevBest };
+}
+
+/* ---------- ライバル（自己ベスト）とのリアルタイム比較用の記録 ---------- */
+function loadBestTraces() {
+  try {
+    return JSON.parse(safeGet(BEST_TRACE_KEY)) || {};
+  } catch (err) {
+    return {};
+  }
+}
+
+function getBestTrace(diff) {
+  const all = loadBestTraces();
+  return all[diff] || null;
+}
+
+function saveBestTrace(diff, trace, score) {
+  const all = loadBestTraces();
+  all[diff] = { score, trace };
+  safeSet(BEST_TRACE_KEY, JSON.stringify(all));
 }
 
 function refreshStartBest() {
@@ -282,7 +331,7 @@ function pickWord(excludeWord) {
     : state.isWeak
     ? state.weakPool
     : DIFFICULTIES[state.difficulty].words;
-  const rand = state.isDaily && state.rng ? state.rng : Math.random;
+  const rand = (state.isDaily || state.isDuel) && state.rng ? state.rng : Math.random;
   let candidate;
   do {
     candidate = pool[Math.floor(rand() * pool.length)];
@@ -290,15 +339,20 @@ function pickWord(excludeWord) {
   return candidate;
 }
 
-function initState(difficulty, practice, isDaily, isWeak) {
+function initState(difficulty, practice, isDaily, isWeak, isDuel, duelSeed) {
   return {
     running: false,
     difficulty,
     practice: !!practice,
     isDaily: !!isDaily,
     isWeak: !!isWeak,
+    isDuel: !!isDuel,
     weakPool: isWeak ? buildWeakWordPool() : null,
-    rng: isDaily ? mulberry32(hashSeedFromString(todayDateString())) : null,
+    rng: isDaily
+      ? mulberry32(hashSeedFromString(todayDateString()))
+      : isDuel
+      ? mulberry32(duelSeed)
+      : null,
     timeLeft: GAME_SECONDS,
     score: 0,
     correctChars: 0,
@@ -310,6 +364,10 @@ function initState(difficulty, practice, isDaily, isWeak) {
     usedKana: false,
     usedRomaji: false,
     current: null,
+    isBonusWord: false,
+    finalSpurt: false,
+    scoreTrace: [],
+    setlist: [],
     typed: "",       // ローマ字入力の進捗
     typedKana: "",   // かな入力の進捗
     litCount: 0,
@@ -321,6 +379,9 @@ function renderPrompt() {
   const { current, typed, typedKana } = state;
   el.promptWord.textContent = current.word;
   el.miniPromptWord.textContent = current.word;
+
+  el.prompter.classList.toggle("bonus-word", state.isBonusWord);
+  el.bonusWordTag.hidden = !state.isBonusWord;
 
   const kanaAnswer = current.kana;
   const doneK = kanaAnswer.slice(0, typedKana.length);
@@ -349,12 +410,18 @@ function nextWord() {
   state.current = pickWord(state.current);
   state.typed = "";
   state.typedKana = "";
+  // デイリー・対戦モードは公平性のため、ボーナスワードの抽選をしない
+  state.isBonusWord = !state.isDaily && !state.isDuel && Math.random() < BONUS_WORD_CHANCE;
   renderPrompt();
 }
 
 function comboMultiplier(combo) {
   const tier = COMBO_TIERS.find((t) => combo >= t.min);
   return tier ? tier.mult : 1.0;
+}
+
+function getScoreMultiplier() {
+  return comboMultiplier(state.combo) * (state.finalSpurt ? FINAL_SPURT_MULT : 1);
 }
 
 function updateHud() {
@@ -377,6 +444,26 @@ function updateHud() {
   } else {
     el.comboValue.hidden = true;
   }
+
+  updateGhostDiff();
+}
+
+function updateGhostDiff() {
+  if (state.practice || state.isDaily || state.isWeak || state.isDuel) {
+    el.ghostDiff.hidden = true;
+    return;
+  }
+  const bestTrace = getBestTrace(state.difficulty);
+  const idx = state.scoreTrace.length - 1;
+  if (!bestTrace || idx < 0 || bestTrace.trace[idx] === undefined) {
+    el.ghostDiff.hidden = true;
+    return;
+  }
+  const diff = state.score - bestTrace.trace[idx];
+  el.ghostDiff.hidden = false;
+  el.ghostDiff.textContent = diff >= 0 ? `▲ ベストより+${diff}` : `▼ ベストより${diff}`;
+  el.ghostDiff.classList.toggle("ahead", diff >= 0);
+  el.ghostDiff.classList.toggle("behind", diff < 0);
 }
 
 function getUnlockedPenlightColors() {
@@ -465,7 +552,7 @@ function isHiraganaChar(ch) {
 
 function onCorrectKeystroke() {
   const cfg = DIFFICULTIES[state.difficulty];
-  const mult = comboMultiplier(state.combo);
+  const mult = getScoreMultiplier();
   state.correctChars += 1;
   state.score += Math.round(10 * mult);
   state.hype = Math.min(100, state.hype + cfg.correctHype);
@@ -492,13 +579,28 @@ function onMissKeystroke() {
 }
 
 function onWordComplete() {
-  const mult = comboMultiplier(state.combo);
+  const mult = getScoreMultiplier();
   state.combo += 1;
   state.maxCombo = Math.max(state.maxCombo, state.combo);
-  state.score += Math.round(20 * mult);
+
+  let points = Math.round(20 * mult);
+  const wasBonus = state.isBonusWord;
+  if (wasBonus) {
+    points *= 2;
+    state.hype = 100;
+  }
+  state.score += points;
+  state.setlist.push({ word: state.current.word, bonus: wasBonus });
+
   burstSpotlight();
   sfxWordComplete();
   vibrate(30);
+
+  if (wasBonus && state.hype >= 100 && !state.hypeCelebrated) {
+    state.hypeCelebrated = true;
+    celebrateHypeMax();
+  }
+
   nextWord();
 }
 
@@ -552,9 +654,27 @@ function typeChar(rawKey) {
   // それ以外の文字（絵文字、記号、変換候補の確定前文字など）は無視
 }
 
+function triggerFinalSpurt() {
+  state.finalSpurt = true;
+  el.stage.classList.add("final-spurt");
+  setBgmFast(true);
+  sfxTick();
+}
+
+function clearFinalSpurt() {
+  el.stage.classList.remove("final-spurt");
+  setBgmFast(false);
+}
+
 function tick() {
   if (state.practice) return; // 練習モードはタイマー無し
   state.timeLeft -= 1;
+  state.scoreTrace.push(state.score);
+
+  if (!state.finalSpurt && state.timeLeft > 0 && state.timeLeft <= FINAL_SPURT_THRESHOLD) {
+    triggerFinalSpurt();
+  }
+
   updateHud();
   if (state.timeLeft <= 3 && state.timeLeft > 0) sfxTick();
   if (state.timeLeft <= 0) endGame();
@@ -568,10 +688,13 @@ function rankFor(score) {
   return "路上ライブ初日";
 }
 
-function startGame(isDaily, isWeak) {
+function startGame(isDaily, isWeak, isDuel, duelSeed) {
   ensureAudio();
-  const practice = (isDaily || isWeak) ? false : !!(el.practiceToggle && el.practiceToggle.checked);
-  state = initState(isDaily || isWeak ? "normal" : selectedDifficulty, practice, isDaily, isWeak);
+  const practice = (isDaily || isWeak || isDuel) ? false : !!(el.practiceToggle && el.practiceToggle.checked);
+  // 対戦難易度は、ローカル対戦なら local2pMatch から、オンライン対戦なら
+  // scheduleOnlineStart が事前にセットした selectedDifficulty から取る。
+  const difficulty = (isDaily || isWeak) ? "normal" : (isDuel && local2pMatch) ? local2pMatch.difficulty : selectedDifficulty;
+  state = initState(difficulty, practice, isDaily, isWeak, isDuel, duelSeed);
   state.running = true;
   buildCrowd();
   nextWord();
@@ -580,6 +703,13 @@ function startGame(isDaily, isWeak) {
   el.resultOverlay.hidden = true;
   el.pauseOverlay.hidden = true;
   el.hypeBanner.classList.remove("show");
+  el.stage.classList.remove("final-spurt");
+  el.prompter.classList.remove("bonus-word");
+  const isOnlineRound = typeof onlineActive !== "undefined" && onlineActive;
+  el.duelPlayerBadge.hidden = !isDuel || isOnlineRound;
+  if (isDuel && !isOnlineRound) {
+    el.duelPlayerBadge.textContent = duelPendingPlayer === 1 ? "🎤 プレイヤー1" : "🎤 プレイヤー2";
+  }
   el.kbdArea.hidden = false; // プレイ中だけキーボードエリアを表示する
   el.stage.classList.add("compact"); // プレイ中はステージを小さくしてキーボードのスペースを確保する
   state.timerId = setInterval(tick, 1000);
@@ -595,6 +725,8 @@ function runCountdown(onDone) {
   el.startOverlay.hidden = true;
   el.resultOverlay.hidden = true;
   el.pauseOverlay.hidden = true;
+  el.duelIntroOverlay.hidden = true;
+  el.duelResultOverlay.hidden = true;
   el.countdownOverlay.hidden = false;
 
   let n = 3;
@@ -683,10 +815,80 @@ function renderTrendChart() {
   });
 }
 
+function renderSetlist() {
+  if (!state.setlist || state.setlist.length === 0) {
+    el.setlistWrap.hidden = true;
+    return;
+  }
+  el.setlistWrap.hidden = false;
+  el.setlistList.innerHTML = state.setlist
+    .map((entry) => `<span class="setlist-tag${entry.bonus ? " bonus" : ""}">${entry.word}</span>`)
+    .join("");
+}
+
+function finishDuelRound() {
+  const result = {
+    score: state.score,
+    correct: state.correctChars,
+    miss: state.missChars,
+  };
+  el.kbdArea.hidden = true;
+  el.stage.classList.remove("compact");
+  el.stage.classList.remove("final-spurt");
+  el.duelPlayerBadge.hidden = true;
+
+  if (duelPendingPlayer === 1) {
+    local2pMatch.p1 = result;
+    showDuelIntro(2);
+  } else {
+    local2pMatch.p2 = result;
+    showDuelFinalResult();
+  }
+}
+
+function showDuelFinalResult() {
+  const p1 = local2pMatch.p1;
+  const p2 = local2pMatch.p2;
+
+  el.duelP1Score.textContent = p1.score;
+  el.duelP1Sub.textContent = `正打${p1.correct} / ミス${p1.miss}`;
+  el.duelP2Score.textContent = p2.score;
+  el.duelP2Sub.textContent = `正打${p2.correct} / ミス${p2.miss}`;
+  el.duelP1Card.classList.toggle("winner", p1.score > p2.score);
+  el.duelP2Card.classList.toggle("winner", p2.score > p1.score);
+
+  if (p1.score === p2.score) {
+    el.duelWinnerTitle.textContent = "🤝 引き分け！";
+  } else {
+    el.duelWinnerTitle.textContent = p1.score > p2.score ? "🎉 プレイヤー1の勝ち！" : "🎉 プレイヤー2の勝ち！";
+  }
+
+  el.duelIntroOverlay.hidden = true;
+  el.duelResultOverlay.hidden = false;
+}
+
 function endGame() {
   state.running = false;
   clearInterval(state.timerId);
   stopBgm();
+  clearFinalSpurt();
+
+  if (typeof onlineActive !== "undefined" && onlineActive) {
+    finishOnlineRound();
+    return;
+  }
+
+  if (state.isDuel) {
+    finishDuelRound();
+    return;
+  }
+
+  // ノーミスならパーフェクトボーナスとしてスコアを+20%する（練習モードは対象外）
+  let perfectBonus = false;
+  if (!state.practice && state.missChars === 0 && state.correctChars > 0) {
+    state.score = Math.round(state.score * (1 + PERFECT_BONUS_RATE));
+    perfectBonus = true;
+  }
 
   const totalChars = state.correctChars + state.missChars;
   const acc = totalChars === 0 ? 0 : Math.round((state.correctChars / totalChars) * 100);
@@ -708,7 +910,10 @@ function endGame() {
 
   recordRun(ctx);
   renderTrendChart();
+  renderSetlist();
   const newTitles = evaluateTitles(ctx);
+
+  el.perfectBonusNote.hidden = !perfectBonus;
 
   if (state.practice) {
     el.resultRank.textContent = "練習おつかれさまでした！";
@@ -726,6 +931,9 @@ function endGame() {
     el.resultBest.innerHTML = isNew
       ? `<span class="is-new">自己ベスト更新！ ${best}</span>`
       : `自己ベスト（${DIFFICULTIES[state.difficulty].label}）：${best}`;
+    if (isNew) {
+      saveBestTrace(state.difficulty, state.scoreTrace, state.score);
+    }
   }
 
   el.resultScore.textContent = state.score;
@@ -757,9 +965,11 @@ function resumeGame() {
   el.pauseOverlay.hidden = true;
   el.kbdArea.hidden = false; // 再開したらキーボードエリアを再び表示する
   el.stage.classList.add("compact"); // 再開したらステージを再び小さくする
+  if (state.finalSpurt) el.stage.classList.add("final-spurt"); // ラストスパート中に一時停止した場合は演出も復元する
   state.running = true;
   state.timerId = setInterval(tick, 1000);
   startBgm();
+  if (state.finalSpurt) setBgmFast(true);
   if (nativeInput && !nativeInput.hidden) {
     nativeInput.focus();
   }
@@ -768,10 +978,19 @@ function resumeGame() {
 function backToMenu() {
   if (state) clearInterval(state.timerId);
   stopBgm();
+  clearFinalSpurt();
+  if (typeof cleanupOnlineRoom === "function") cleanupOnlineRoom();
   state = null;
+  local2pMatch = null;
+  duelPendingPlayer = null;
   el.pauseOverlay.hidden = true;
   el.resultOverlay.hidden = true;
   el.countdownOverlay.hidden = true;
+  el.duelIntroOverlay.hidden = true;
+  el.duelResultOverlay.hidden = true;
+  if (el.onlineMenuOverlay) el.onlineMenuOverlay.hidden = true;
+  if (el.onlineWaitOverlay) el.onlineWaitOverlay.hidden = true;
+  el.duelPlayerBadge.hidden = true;
   el.startOverlay.hidden = false;
   el.kbdArea.hidden = true; // メニューに戻ったらキーボードエリアを隠す
   el.stage.classList.remove("compact"); // メニューに戻ったらステージを通常サイズに戻す
@@ -779,6 +998,53 @@ function backToMenu() {
   refreshDailyButton();
   refreshWeakButton();
 }
+
+/* ---------- 2人対戦（ローカル） ---------- */
+function showDuelIntro(playerNum) {
+  duelPendingPlayer = playerNum;
+  el.duelIntroTitle.textContent = `プレイヤー${playerNum}の番です`;
+  el.duelIntroText.textContent =
+    playerNum === 1
+      ? "端末を渡して、準備ができたらボタンを押してください。"
+      : "交代してください！プレイヤー2の準備ができたらボタンを押してください。";
+  el.startOverlay.hidden = true;
+  el.resultOverlay.hidden = true;
+  el.duelResultOverlay.hidden = true;
+  el.duelIntroOverlay.hidden = false;
+}
+
+function startLocal2pMatch() {
+  local2pMatch = {
+    seed: Math.floor(Math.random() * 1e9),
+    difficulty: selectedDifficulty,
+    p1: null,
+    p2: null,
+  };
+  showDuelIntro(1);
+}
+
+el.local2pBtn.addEventListener("click", startLocal2pMatch);
+
+el.duelIntroBtn.addEventListener("click", () => {
+  el.duelIntroOverlay.hidden = true;
+  runCountdown(() => startGame(false, false, true, local2pMatch.seed));
+});
+
+el.duelRetryBtn.addEventListener("click", () => {
+  el.duelResultOverlay.hidden = true;
+  local2pMatch = {
+    seed: Math.floor(Math.random() * 1e9),
+    difficulty: local2pMatch.difficulty,
+    p1: null,
+    p2: null,
+  };
+  showDuelIntro(1);
+});
+
+el.duelBackBtn.addEventListener("click", () => {
+  el.duelResultOverlay.hidden = true;
+  backToMenu();
+});
 
 el.startBtn.addEventListener("click", () => beginWithCountdown(false));
 el.retryBtn.addEventListener("click", () => beginWithCountdown(false));

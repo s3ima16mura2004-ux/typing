@@ -163,6 +163,17 @@ body{
   50%{ filter: brightness(1.6); transform: scale(1.08); }
 }
 
+/* ---------- ライバル（自己ベスト）とのリアルタイム比較 ---------- */
+.hud-ghost{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.hud-ghost.ahead{ color: var(--mint); }
+.hud-ghost.behind{ color: var(--miss); }
+
 #timeValue.time-warn{ color: var(--miss); }
 
 .hype-wrap{ flex: 1; display: flex; flex-direction: column; gap: 4px; }
@@ -326,6 +337,22 @@ body{
   backdrop-filter: blur(6px);
 }
 
+/* ---------- 2人対戦中のプレイヤー表示バッジ ---------- */
+.duel-player-badge{
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--bg-deep);
+  background: linear-gradient(90deg, var(--purple), var(--pink));
+  border-radius: 999px;
+  padding: 4px 14px;
+}
+
 .prompter-kana{
   font-size: 15px;
   color: var(--ink-dim);
@@ -356,6 +383,50 @@ body{
 .romaji-done{ color: var(--gold); }
 .romaji-next{ color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
 .romaji-rest{ color: var(--ink-dim); }
+
+/* ---------- レアお題（ボーナスワード） ---------- */
+.prompter.bonus-word .prompter-word{
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,209,102,0.9), 0 0 60px rgba(255,209,102,0.5), 0 2px 10px rgba(0,0,0,0.85);
+  animation: bonusGlow 1s ease-in-out infinite;
+}
+
+@keyframes bonusGlow{
+  0%, 100%{ transform: scale(1); }
+  50%{ transform: scale(1.05); }
+}
+
+.bonus-word-tag{
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bg-deep);
+  background: linear-gradient(90deg, var(--gold), var(--pink));
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin-bottom: 4px;
+}
+
+/* ---------- ラストスパート（残り10秒） ---------- */
+.stage.final-spurt .crowd .penlight.lit{
+  animation: swayBig 0.35s ease-in-out infinite;
+}
+
+.stage.final-spurt::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 120% 60% at 50% 100%, rgba(255,77,94,0.12), transparent 70%);
+  animation: spurtPulse 0.6s ease-in-out infinite;
+}
+
+@keyframes spurtPulse{
+  0%, 100%{ opacity: 0.6; }
+  50%{ opacity: 1; }
+}
 
 /* ---------- オーバーレイ ---------- */
 .overlay{
@@ -520,6 +591,19 @@ body{
   color: var(--pink);
 }
 
+.daily-btn.duel-btn{
+  border-color: rgba(179, 136, 255, 0.4);
+  background: rgba(179, 136, 255, 0.08);
+}
+
+.daily-btn.duel-btn:hover{
+  background: rgba(179, 136, 255, 0.16);
+}
+
+.daily-btn.duel-btn .daily-btn-status{
+  color: var(--purple);
+}
+
 .daily-btn-title{
   font-family: var(--font-body);
   font-weight: 700;
@@ -679,6 +763,14 @@ body{
   margin: 0 0 30px;
 }
 
+.perfect-bonus-note{
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--gold);
+  margin: -8px 0 14px;
+}
+
 .trend-wrap{
   display: flex;
   flex-direction: column;
@@ -690,6 +782,43 @@ body{
 .trend-wrap canvas{
   display: block;
 }
+
+/* ---------- セットリスト ---------- */
+.setlist-wrap{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  max-width: 340px;
+}
+
+.setlist{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.setlist-tag{
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--ink-dim);
+  background: var(--bg-panel);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.setlist-tag.bonus{
+  color: var(--bg-deep);
+  background: linear-gradient(90deg, var(--gold), var(--pink));
+  border-color: transparent;
+  font-weight: 700;
+}
+
 .result-stats > div{ display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .result-num{
   font-family: var(--font-mono);
@@ -1021,4 +1150,111 @@ body{
 .overlay-btn{
   padding: 11px 28px;
   font-size: 15px;
+}
+
+/* ---------- 2人対戦（ローカル） ---------- */
+.duel-vs{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.duel-player{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 110px;
+  padding: 16px 12px;
+  border-radius: 14px;
+  background: var(--bg-panel);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.duel-player.winner{
+  border-color: rgba(255, 209, 102, 0.6);
+  background: rgba(255, 209, 102, 0.08);
+  transform: translateY(-4px);
+}
+
+.duel-player-label{
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+.duel-player-score{
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 30px;
+  color: var(--ink);
+}
+
+.duel-player-sub{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+}
+
+.duel-vs-mark{
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 20px;
+  color: var(--gold);
+}
+
+/* ---------- オンライン対戦 ---------- */
+.daily-btn.online-btn{
+  border-color: rgba(255, 209, 102, 0.4);
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.daily-btn.online-btn:hover{
+  background: rgba(255, 209, 102, 0.16);
+}
+
+.daily-btn.online-btn .daily-btn-status{
+  color: var(--gold);
+}
+
+.online-join-input{
+  width: 180px;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  letter-spacing: 0.3em;
+  text-align: center;
+  color: var(--ink);
+  background: var(--bg-panel);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.online-join-input:focus{
+  outline: none;
+  border-color: var(--gold);
+}
+
+.online-status{
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-dim);
+  min-height: 1.4em;
+  margin: 10px 0 0;
+}
+
+.online-status.error{
+  color: var(--miss);
+}
+
+.online-room-code{
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 44px;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  margin: 4px 0 14px;
 }

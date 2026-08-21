@@ -100,6 +100,7 @@ const BGM_KEY = "karaokeTyping.bgmEnabled";
 let bgmEnabled = safeGet(BGM_KEY) === "1"; // デフォルトはOFF（意図せず音楽が鳴らないよう配慮）
 let bgmTimer = null;
 let bgmStep = 0;
+let bgmSpeedFactor = 1; // ラストスパート時に一時的に速くする
 
 // シンプルな8ステップのアルペジオ（C - E - G - E - D - F - A - F）
 const BGM_PATTERN = [523.25, 659.25, 783.99, 659.25, 587.33, 698.46, 880.0, 698.46];
@@ -111,7 +112,7 @@ function playBgmStep() {
   playTone(freq, 0.18, "sine", 0.05);
   if (bgmStep % 2 === 0) playTone(freq / 2, 0.3, "triangle", 0.04); // 2拍ごとに軽いベース音
   bgmStep += 1;
-  bgmTimer = setTimeout(playBgmStep, BGM_STEP_MS);
+  bgmTimer = setTimeout(playBgmStep, BGM_STEP_MS * bgmSpeedFactor);
 }
 
 function startBgm() {
@@ -126,10 +127,16 @@ function stopBgm() {
     clearTimeout(bgmTimer);
     bgmTimer = null;
   }
+  bgmSpeedFactor = 1;
 }
 
 function setBgmEnabled(value) {
   bgmEnabled = value;
   safeSet(BGM_KEY, value ? "1" : "0");
   if (!value) stopBgm();
+}
+
+// ラストスパート演出用：BGMのテンポを一時的に上げる（元に戻すときはfalseを渡す）
+function setBgmFast(on) {
+  bgmSpeedFactor = on ? 0.62 : 1;
 }
