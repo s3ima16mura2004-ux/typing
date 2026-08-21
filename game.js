@@ -27,6 +27,9 @@ const STAR_TIME_MULT = 2;
 const STAR_TIME_DURATION_MS = 8000;
 const SPEED_DEMON_MS = 1500;
 const SABOTAGE_MAX_PER_MATCH = 2;
+const ENCORE_TIME_BONUS = 10;
+const ENCORE_DURATION_MS = 10000;
+const BAND_LEVEL_STEP = 10; // このコンボ数ごとにバンドの演奏レベルが1つ上がる
 
 const el = {
   crowd: document.getElementById("crowd"),
@@ -48,8 +51,9 @@ const el = {
   bossWordTag: document.getElementById("bossWordTag"),
   skillBtn: document.getElementById("skillBtn"),
   reactionPopup: document.getElementById("reactionPopup"),
-  missionBanner: document.getElementById("missionBanner"),
-  missionBannerList: document.getElementById("missionBannerList"),
+  bandRow: document.getElementById("bandRow"),
+  countdownMissions: document.getElementById("countdownMissions"),
+  countdownMissionsList: document.getElementById("countdownMissionsList"),
   promptKana: document.getElementById("promptKana"),
   promptWord: document.getElementById("promptWord"),
   promptRomaji: document.getElementById("promptRomaji"),
@@ -95,6 +99,9 @@ const el = {
   missionBonusNote: document.getElementById("missionBonusNote"),
   perfectBonusNote: document.getElementById("perfectBonusNote"),
   newTitles: document.getElementById("newTitles"),
+  diagnosisWrap: document.getElementById("diagnosisWrap"),
+  diagnosisType: document.getElementById("diagnosisType"),
+  diagnosisStats: document.getElementById("diagnosisStats"),
   retryBtn: document.getElementById("retryBtn"),
   shareBtn: document.getElementById("shareBtn"),
   backToMenuBtn: document.getElementById("backToMenuBtn"),
@@ -407,12 +414,20 @@ function initState(difficulty, practice, isDaily, isWeak, isDuel, duelSeed) {
     nextBonusBoost: 1,     // 💎 ダブルスコアの倍率（通常1）
     feverUsesThisRound: 0,
     // ---- ランダムイベント ----
-    eventActive: null,     // "star" が発動中なら文字列で入る
+    eventActive: null,     // "star" または "encore" が発動中なら文字列で入る
     eventActiveUntil: 0,
     eventFireAt: null,     // イベントを発生させる残り時間のしきい値（秒）
     eventFired: false,
+    encoreUsed: false,     // アンコールモードはラウンド中1回だけ発動する
+    hypeMaxCount: 0,       // 「プレイスタイル診断」のライブ力の指標に使う
+    clutchThousand: false, // 💀 ギリギリの天才：残り3秒以内にスコア1000到達
     // ---- ミッション ----
     missions: [],
+    // ---- バンド演奏（コンボで曲が豪華になる演出） ----
+    bandLevel: 0,
+    noMissWordStreak: 0,   // 直前のミスから何単語ノーミスで打てているか
+    maxNoMissStreak: 0,
+    encoreWordStreak: 0,   // 同じお題を連続で成功させた回数（「アンコール！」称号用）
     // ---- 対戦の妨害（オンラインのみ） ----
     sabotagesSentThisMatch: 0,
     shakeUntil: 0,
@@ -475,7 +490,7 @@ function comboMultiplier(combo) {
 
 function getScoreMultiplier() {
   const feverMult = state.skillActive === "fever" ? FEVER_MULT : 1;
-  const eventMult = state.eventActive === "star" ? STAR_TIME_MULT : 1;
+  const eventMult = (state.eventActive === "star" || state.eventActive === "encore") ? STAR_TIME_MULT : 1;
   const bossMult = state.isBossWord ? BOSS_WORD_MULT : 1;
   return comboMultiplier(state.combo) * (state.finalSpurt ? FINAL_SPURT_MULT : 1) * feverMult * eventMult * bossMult;
 }
@@ -599,20 +614,41 @@ function burstSpotlight() {
   el.spotlight.classList.add("burst");
 }
 
+function triggerEncoreMode() {
+  state.encoreUsed = true;
+  state.timeLeft += ENCORE_TIME_BONUS;
+  state.eventActive = "encore";
+  state.eventActiveUntil = Date.now() + ENCORE_DURATION_MS;
+  el.stage.classList.add("encore");
+  updateHud();
+  setTimeout(() => {
+    if (state && state.eventActive === "encore") {
+      state.eventActive = null;
+      el.stage.classList.remove("encore");
+    }
+  }, ENCORE_DURATION_MS);
+}
+
 function celebrateHypeMax() {
   const isMiracle = state.combo >= 8;
+  state.hypeMaxCount += 1;
+
+  // 初めてHYPEが満タンになった時だけ、アンコールモード（+10秒・2倍・観客総立ち）を発動する
+  // 対戦モードでは公平性のため発動しない
+  const canEncore = !state.encoreUsed && !state.isDuel;
+  if (canEncore) triggerEncoreMode();
 
   el.crowd.classList.add("wave");
-  if (isMiracle) {
+  if (isMiracle || canEncore) {
     Array.from(el.crowd.children).forEach((p) => p.classList.add("rainbow"));
   }
 
-  el.hypeBanner.textContent = isMiracle ? "奇跡の瞬間！" : "熱狂の渦！";
+  el.hypeBanner.textContent = canEncore ? "🔥 ENCORE!! +10秒" : isMiracle ? "奇跡の瞬間！" : "熱狂の渦！";
   el.hypeBanner.classList.remove("show");
   void el.hypeBanner.offsetWidth;
   el.hypeBanner.classList.add("show");
 
-  if (isMiracle) {
+  if (canEncore || isMiracle) {
     sfxMiracle();
     vibrate([40, 60, 40, 60, 40, 60, 200]);
   } else {
@@ -622,7 +658,7 @@ function celebrateHypeMax() {
 
   setTimeout(() => {
     el.crowd.classList.remove("wave");
-    if (isMiracle) {
+    if (isMiracle || canEncore) {
       Array.from(el.crowd.children).forEach((p) => p.classList.remove("rainbow"));
     }
   }, 1400);
@@ -673,6 +709,8 @@ function onMissKeystroke() {
 
   state.missChars += 1;
   state.combo = 0;
+  state.noMissWordStreak = 0;
+  updateBandLevel();
   state.hype = Math.max(0, state.hype - cfg.missPenalty);
   if (state.hype < 100) state.hypeCelebrated = false;
   if (state.current) {
@@ -682,6 +720,36 @@ function onMissKeystroke() {
   flashMiss();
   sfxMiss();
   vibrate([25, 40, 25]);
+}
+
+/* =========================================================
+   バンド演奏（コンボが伸びるほど曲が豪華になる演出）
+   ========================================================= */
+
+function getBandLevel(combo) {
+  return Math.min(4, Math.floor(combo / BAND_LEVEL_STEP));
+}
+
+function updateBandLevel() {
+  const level = getBandLevel(state.combo);
+  if (level === state.bandLevel) return;
+  const reachedFullLive = level >= 4 && state.bandLevel < 4;
+  state.bandLevel = level;
+
+  if (el.bandRow) {
+    el.bandRow.querySelectorAll(".band-icon").forEach((icon) => {
+      icon.classList.toggle("active", Number(icon.dataset.level) <= level);
+    });
+  }
+  if (typeof setBgmComboLevel === "function") setBgmComboLevel(level);
+
+  if (reachedFullLive) {
+    el.hypeBanner.textContent = "🎶 FULL LIVE!!";
+    el.hypeBanner.classList.remove("show");
+    void el.hypeBanner.offsetWidth;
+    el.hypeBanner.classList.add("show");
+    sfxMiracle();
+  }
 }
 
 /* =========================================================
@@ -750,6 +818,14 @@ function onWordComplete() {
   const mult = getScoreMultiplier();
   state.combo += 1;
   state.maxCombo = Math.max(state.maxCombo, state.combo);
+  updateBandLevel();
+
+  state.noMissWordStreak += 1;
+  state.maxNoMissStreak = Math.max(state.maxNoMissStreak, state.noMissWordStreak);
+
+  // 「アンコール！」称号用：同じお題を連続で成功させたかどうか
+  const prevEntry = state.setlist[state.setlist.length - 1];
+  state.encoreWordStreak = prevEntry && prevEntry.word === state.current.word ? state.encoreWordStreak + 1 : 0;
 
   const wordTimeMs = Date.now() - state.wordStartedAt;
   if (state.fastestWordMs === null || wordTimeMs < state.fastestWordMs) {
@@ -768,6 +844,12 @@ function onWordComplete() {
     state.bossWordClearedThisRound = true;
     showBossBreakBanner();
   }
+
+  // 💀 ギリギリの天才：残り3秒以内にスコア1000到達
+  if (!state.practice && !state.clutchThousand && state.timeLeft <= 3 && state.score + points >= 1000) {
+    state.clutchThousand = true;
+  }
+
   state.score += points;
   state.setlist.push({ word: state.current.word, bonus: wasBonus, boss: wasBoss });
 
@@ -965,16 +1047,7 @@ function generateMissions(difficulty) {
   return shuffled.slice(0, 3).map((m) => ({ id: m.id, label: m.label, check: m.check, cleared: false }));
 }
 
-function showMissionBanner(missions) {
-  el.missionBannerList.innerHTML = missions.map((m) => `<li>${m.label}</li>`).join("");
-  el.missionBanner.hidden = false;
-  el.missionBanner.classList.remove("show");
-  void el.missionBanner.offsetWidth;
-  el.missionBanner.classList.add("show");
-  setTimeout(() => {
-    el.missionBanner.hidden = true;
-  }, 3600);
-}
+let pendingMissions = null; // カウントダウン中に表示するミッション（開始直後にお題と被らせないため先に用意しておく）
 
 function startGame(isDaily, isWeak, isDuel, duelSeed) {
   ensureAudio();
@@ -988,11 +1061,18 @@ function startGame(isDaily, isWeak, isDuel, duelSeed) {
   // ミッション・ランダムイベントは、通常のスコアアタック（練習・デイリー・苦手克服・対戦以外）だけが対象
   const isStandardRun = !practice && !isDaily && !isWeak && !isDuel;
   if (isStandardRun) {
-    state.missions = generateMissions(difficulty);
+    // カウントダウン中にすでに表示済みのミッションがあればそれを使い、無ければここで生成する
+    // （ローカル/オンライン対戦の合間の再戦などでも安全に動くようにするため）
+    state.missions = pendingMissions || generateMissions(difficulty);
     state.eventFireAt = FINAL_SPURT_THRESHOLD + 5 + Math.floor(Math.random() * (GAME_SECONDS - FINAL_SPURT_THRESHOLD - 20));
   }
+  pendingMissions = null;
 
   lastGhostSign = 0;
+  if (el.bandRow) {
+    el.bandRow.querySelectorAll(".band-icon").forEach((icon) => icon.classList.remove("active"));
+  }
+  if (typeof setBgmComboLevel === "function") setBgmComboLevel(0);
   buildCrowd();
   nextWord();
   updateHud();
@@ -1001,6 +1081,7 @@ function startGame(isDaily, isWeak, isDuel, duelSeed) {
   el.pauseOverlay.hidden = true;
   el.hypeBanner.classList.remove("show");
   el.stage.classList.remove("final-spurt");
+  el.stage.classList.remove("encore");
   el.prompter.classList.remove("bonus-word", "boss-word");
   clearRoundEffects();
   const isOnlineRound = typeof onlineActive !== "undefined" && onlineActive;
@@ -1013,23 +1094,27 @@ function startGame(isDaily, isWeak, isDuel, duelSeed) {
   state.timerId = setInterval(tick, 1000);
   startBgm();
 
-  if (isStandardRun) {
-    showMissionBanner(state.missions);
-  }
-
   // 「端末のキーボード」モードならゲーム開始と同時にフォーカスして開く
   if (nativeInput && !nativeInput.hidden) {
     nativeInput.focus();
   }
 }
 
-function runCountdown(onDone) {
+function runCountdown(onDone, missions) {
   el.startOverlay.hidden = true;
   el.resultOverlay.hidden = true;
   el.pauseOverlay.hidden = true;
   el.duelIntroOverlay.hidden = true;
   el.duelResultOverlay.hidden = true;
   el.countdownOverlay.hidden = false;
+
+  // ミッションは「お題が出る前」のこのタイミングでだけ表示する（お題と被らないように）
+  if (missions && missions.length > 0 && el.countdownMissionsList) {
+    el.countdownMissions.hidden = false;
+    el.countdownMissionsList.innerHTML = missions.map((m) => `<li>${m.label}</li>`).join("");
+  } else if (el.countdownMissions) {
+    el.countdownMissions.hidden = true;
+  }
 
   let n = 3;
   const showNum = () => {
@@ -1055,7 +1140,11 @@ function runCountdown(onDone) {
 
 function beginWithCountdown(isDaily, isWeak) {
   ensureAudio();
-  runCountdown(() => startGame(isDaily, isWeak));
+  const practice = (isDaily || isWeak) ? false : !!(el.practiceToggle && el.practiceToggle.checked);
+  const difficulty = (isDaily || isWeak) ? "normal" : selectedDifficulty;
+  const isStandardRun = !practice && !isDaily && !isWeak;
+  pendingMissions = isStandardRun ? generateMissions(difficulty) : null;
+  runCountdown(() => startGame(isDaily, isWeak), pendingMissions);
 }
 
 function renderNewTitles(newTitles) {
@@ -1237,6 +1326,62 @@ function renderGrowthComparison(prevRun, ctx, acc) {
     .join("");
 }
 
+/* =========================================================
+   プレイスタイル診断（結果画面に表示する）
+   ========================================================= */
+
+function starsFor(value, thresholds) {
+  let stars = 1;
+  thresholds.forEach((t) => {
+    if (value >= t) stars += 1;
+  });
+  return Math.min(5, stars);
+}
+
+function starString(n) {
+  return "★".repeat(n) + "☆".repeat(5 - n);
+}
+
+function computeDiagnosis(ctx, charsPerMinute, acc) {
+  const speedStars = starsFor(charsPerMinute, [60, 100, 150, 220]);
+  const accuracyStars = starsFor(acc, [70, 80, 90, 97]);
+  const comboStars = starsFor(ctx.maxCombo, [5, 10, 20, 35]);
+  const liveStars = starsFor((state.hypeMaxCount || 0) + (state.feverUsesThisRound || 0), [1, 2, 3, 5]);
+
+  const candidates = [
+    { key: "speed", stars: speedStars, emoji: "⚡", label: "スピードスター" },
+    { key: "accuracy", stars: accuracyStars, emoji: "💎", label: "パーフェクトタイプ" },
+    { key: "combo", stars: comboStars, emoji: "👑", label: "コンボ職人" },
+    { key: "live", stars: liveStars, emoji: "🔥", label: "HYPEメーカー" },
+  ];
+  const top = candidates.reduce((best, c) => (c.stars > best.stars ? c : best), candidates[0]);
+
+  return {
+    emoji: top.emoji,
+    label: top.label,
+    rows: [
+      { label: "スピード", stars: speedStars },
+      { label: "正確性", stars: accuracyStars },
+      { label: "コンボ", stars: comboStars },
+      { label: "ライブ力", stars: liveStars },
+    ],
+  };
+}
+
+function renderDiagnosis(ctx, charsPerMinute, acc) {
+  if (!el.diagnosisWrap) return;
+  if (ctx.practice) {
+    el.diagnosisWrap.hidden = true;
+    return;
+  }
+  const diagnosis = computeDiagnosis(ctx, charsPerMinute, acc);
+  el.diagnosisWrap.hidden = false;
+  el.diagnosisType.textContent = `${diagnosis.emoji} あなたのライブスタイルは……${diagnosis.label}`;
+  el.diagnosisStats.innerHTML = diagnosis.rows
+    .map((r) => `<li><span>${r.label}</span><span class="stars">${starString(r.stars)}</span></li>`)
+    .join("");
+}
+
 function endGame() {
   state.running = false;
   clearInterval(state.timerId);
@@ -1295,6 +1440,9 @@ function endGame() {
     bossWordCleared: state.bossWordClearedThisRound,
     fastestWordMs: state.fastestWordMs,
     feverUsesThisRound: state.feverUsesThisRound,
+    maxNoMissStreak: state.maxNoMissStreak,
+    encoreWordStreak: state.encoreWordStreak,
+    clutchThousand: state.clutchThousand,
     hour: new Date().getHours(),
     date: new Date().toISOString(),
   };
@@ -1310,6 +1458,7 @@ function endGame() {
   renderMissedWords();
   renderGrowthComparison(prevRun, ctx, acc);
   renderMissionResult(missionInfo);
+  renderDiagnosis(ctx, charsPerMinute, acc);
   const newTitles = evaluateTitles(ctx);
 
   el.perfectBonusNote.hidden = !perfectBonus;

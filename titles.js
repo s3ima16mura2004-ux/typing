@@ -156,6 +156,48 @@ const TITLES = [
     item: "👑",
     check: (ctx) => !!ctx.isRankingFirst,
   },
+  {
+    id: "perfect_streak_10",
+    name: "完璧主義",
+    desc: "10単語連続でノーミスで打ち切った",
+    item: "💎",
+    check: (ctx) => (ctx.maxNoMissStreak || 0) >= 10,
+  },
+  {
+    id: "encore_word",
+    name: "アンコール！",
+    desc: "同じお題を連続で成功させた",
+    item: "🎤",
+    check: (ctx) => (ctx.encoreWordStreak || 0) >= 1,
+  },
+  {
+    id: "clutch_thousand",
+    name: "ギリギリの天才",
+    desc: "残り3秒以内にスコア1000点に到達した",
+    item: "💀",
+    check: (ctx) => !!ctx.clutchThousand,
+  },
+  {
+    id: "combo_100",
+    name: "コンボマスター",
+    desc: "コンボ100に到達した（激レア）",
+    item: "🎯",
+    check: (ctx) => ctx.maxCombo >= 100,
+  },
+  {
+    id: "kana_500",
+    name: "かな乗り",
+    desc: "かな入力だけでスコア500点以上を記録した",
+    item: "🎹",
+    check: (ctx) => !ctx.practice && ctx.usedKana && !ctx.usedRomaji && ctx.score >= 500,
+  },
+  {
+    id: "full_live",
+    name: "フルライブ！",
+    desc: "コンボ40に到達し、バンド演奏をフル編成にした",
+    item: "🎶",
+    check: (ctx) => ctx.maxCombo >= 40,
+  },
 ];
 
 function loadUnlockedTitles() {

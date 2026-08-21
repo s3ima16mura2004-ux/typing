@@ -37,6 +37,12 @@
     <div class="hype-wrap">
       <span class="hud-label">HYPE</span>
       <div class="hype-bar"><div class="hype-fill" id="hypeFill"></div></div>
+      <div class="band-row" id="bandRow">
+        <span class="band-icon" data-level="1">🥁</span>
+        <span class="band-icon" data-level="2">🎸</span>
+        <span class="band-icon" data-level="3">🎹</span>
+        <span class="band-icon" data-level="4">🎤</span>
+      </div>
     </div>
     <div class="hud-block hud-block--time">
       <span class="hud-label">TIME</span>
@@ -68,12 +74,6 @@
 
   <!-- スキル発動ボタン（コンボの節目でチャージされる） -->
   <button type="button" class="skill-btn" id="skillBtn" hidden>✨ スキル発動</button>
-
-  <!-- ラウンド開始直後に出る「今回のミッション」表示 -->
-  <div class="mission-banner" id="missionBanner" hidden>
-    <p class="mission-banner-title">TODAY'S MISSION</p>
-    <ul id="missionBannerList"></ul>
-  </div>
 
   <!-- 2人対戦中のプレイヤー表示 -->
   <div class="duel-player-badge" id="duelPlayerBadge" hidden></div>
@@ -169,6 +169,10 @@
       <ul class="mission-result-list" id="missionResultList"></ul>
       <p class="mission-bonus-note" id="missionBonusNote" hidden>🎁 全ミッション達成ボーナス +10%！</p>
     </div>
+    <div class="diagnosis-wrap" id="diagnosisWrap" hidden>
+      <p class="diagnosis-type" id="diagnosisType">🎤 あなたのライブスタイルは……</p>
+      <ul class="diagnosis-stats" id="diagnosisStats"></ul>
+    </div>
     <div class="new-titles" id="newTitles" hidden></div>
     <button class="overlay-btn" id="retryBtn">アンコール（もう一度）</button>
     <button class="overlay-btn overlay-btn--sub" id="shareBtn">結果を画像で保存</button>
@@ -186,6 +190,10 @@
   <!-- カウントダウン画面 -->
   <div class="overlay countdown-overlay" id="countdownOverlay" hidden>
     <span class="countdown-num" id="countdownNum">3</span>
+    <div class="countdown-missions" id="countdownMissions" hidden>
+      <p class="mission-banner-title">TODAY'S MISSION</p>
+      <ul id="countdownMissionsList"></ul>
+    </div>
   </div>
 
   <!-- 称号一覧画面 -->

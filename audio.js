@@ -106,11 +106,36 @@ let bgmSpeedFactor = 1; // ラストスパート時に一時的に速くする
 const BGM_PATTERN = [523.25, 659.25, 783.99, 659.25, 587.33, 698.46, 880.0, 698.46];
 const BGM_STEP_MS = 220;
 
+let bgmComboLevel = 0; // コンボに応じたバンドの演奏レベル（0〜4）。game.js の updateBandLevel から更新される。
+
+function setBgmComboLevel(level) {
+  bgmComboLevel = level;
+}
+
 function playBgmStep() {
   if (!bgmEnabled) return;
   const freq = BGM_PATTERN[bgmStep % BGM_PATTERN.length];
+
+  // メロディ（常時）
   playTone(freq, 0.18, "sine", 0.05);
-  if (bgmStep % 2 === 0) playTone(freq / 2, 0.3, "triangle", 0.04); // 2拍ごとに軽いベース音
+
+  // 🥁 レベル1〜：ベース（2拍ごと）
+  if (bgmComboLevel >= 1 && bgmStep % 2 === 0) {
+    playTone(freq / 2, 0.3, "triangle", 0.05);
+  }
+  // 🎸 レベル2〜：刻み（ハイハット風、毎拍）
+  if (bgmComboLevel >= 2) {
+    playTone(1800, 0.04, "square", 0.02);
+  }
+  // 🎹 レベル3〜：ハーモニー（4拍ごと）
+  if (bgmComboLevel >= 3 && bgmStep % 4 === 0) {
+    playTone(freq * 1.5, 0.25, "sine", 0.045);
+  }
+  // 🎤 レベル4：フルライブ（メロディを少し華やかに）
+  if (bgmComboLevel >= 4) {
+    playTone(freq * 2, 0.12, "triangle", 0.03);
+  }
+
   bgmStep += 1;
   bgmTimer = setTimeout(playBgmStep, BGM_STEP_MS * bgmSpeedFactor);
 }
@@ -128,6 +153,7 @@ function stopBgm() {
     bgmTimer = null;
   }
   bgmSpeedFactor = 1;
+  bgmComboLevel = 0;
 }
 
 function setBgmEnabled(value) {
