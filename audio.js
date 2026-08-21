@@ -72,6 +72,14 @@ function sfxHypeMax() {
   playTone(1047, 0.3, "triangle", 0.16, 0.15);
 }
 
+function sfxMiracle() {
+  playTone(523, 0.16, "triangle", 0.16);
+  playTone(659, 0.16, "triangle", 0.16, 0.08);
+  playTone(784, 0.16, "triangle", 0.16, 0.16);
+  playTone(1047, 0.16, "triangle", 0.17, 0.24);
+  playTone(1319, 0.4, "triangle", 0.18, 0.32);
+}
+
 function sfxTick() {
   playTone(400, 0.05, "square", 0.06);
 }

@@ -97,6 +97,12 @@ const TITLES = [
     desc: "今日のステージ（デイリーチャレンジ）をクリアした",
     check: (ctx) => !!ctx.isDaily,
   },
+  {
+    id: "streak_7",
+    name: "常連ボーカリスト",
+    desc: "デイリーチャレンジに7日連続で挑戦した",
+    check: (ctx, stats) => (stats.dailyStreak || 0) >= 7,
+  },
 ];
 
 function loadUnlockedTitles() {
@@ -123,6 +129,10 @@ function saveStats(stats) {
   safeSet(STATS_KEY, JSON.stringify(stats));
 }
 
+function getDailyStreak() {
+  return loadStats().dailyStreak || 0;
+}
+
 // そのラウンドの結果を元に、累計記録を更新し、新しく解放された称号を返す
 function evaluateTitles(ctx) {
   const stats = loadStats();
@@ -134,6 +144,20 @@ function evaluateTitles(ctx) {
     stats.difficultiesCleared = stats.difficultiesCleared || {};
     stats.difficultiesCleared[ctx.difficulty] = true;
   }
+
+  // デイリーチャレンジの連続挑戦日数（ストリーク）を更新する
+  if (ctx.isDaily) {
+    const today = ctx.date.slice(0, 10);
+    if (stats.lastDailyDate !== today) {
+      const y = new Date(ctx.date);
+      y.setDate(y.getDate() - 1);
+      const yesterday = y.toISOString().slice(0, 10);
+      stats.dailyStreak = stats.lastDailyDate === yesterday ? (stats.dailyStreak || 0) + 1 : 1;
+      stats.lastDailyDate = today;
+    }
+    // 同じ日に何度再挑戦してもストリークは変えない
+  }
+
   saveStats(stats);
 
   const unlockedSet = new Set(loadUnlockedTitles());

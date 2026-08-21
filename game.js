@@ -5,12 +5,13 @@
    ※ words.js / audio.js を先に読み込んでおくこと。
    ========================================================= */
 
-const PENLIGHT_COLORS = ["--gold", "--pink", "--cyan"];
 const GAME_SECONDS = 60;
 const CROWD_SIZE = 63; // 9列 x 7段
 const BEST_SCORE_KEY = "karaokeTyping.bestScores";
 const DIFF_KEY = "karaokeTyping.difficulty";
 const RUN_HISTORY_KEY = "karaokeTyping.runHistory";
+const MISS_STATS_KEY = "karaokeTyping.missStats";
+const WEAK_POOL_SIZE = 12;
 
 const el = {
   crowd: document.getElementById("crowd"),
@@ -36,6 +37,8 @@ const el = {
   diffSelect: document.getElementById("diffSelect"),
   dailyBtn: document.getElementById("dailyBtn"),
   dailyStatusInline: document.getElementById("dailyStatusInline"),
+  weakBtn: document.getElementById("weakBtn"),
+  weakStatusInline: document.getElementById("weakStatusInline"),
   titlesBtn: document.getElementById("titlesBtn"),
   titlesOverlay: document.getElementById("titlesOverlay"),
   titlesCount: document.getElementById("titlesCount"),
@@ -52,6 +55,8 @@ const el = {
   resultScore: document.getElementById("resultScore"),
   resultChars: document.getElementById("resultChars"),
   resultAcc: document.getElementById("resultAcc"),
+  trendWrap: document.getElementById("trendWrap"),
+  trendCanvas: document.getElementById("trendCanvas"),
   newTitles: document.getElementById("newTitles"),
   retryBtn: document.getElementById("retryBtn"),
   shareBtn: document.getElementById("shareBtn"),
@@ -171,7 +176,59 @@ function getTodayDaily() {
 
 function refreshDailyButton() {
   const daily = getTodayDaily();
-  el.dailyStatusInline.textContent = daily ? `本日のベスト：${daily.score}点` : "本日はまだ未挑戦";
+  const streak = getDailyStreak();
+  const streakText = streak > 0 ? `🔥 ${streak}日連続　` : "";
+  el.dailyStatusInline.textContent = streakText + (daily ? `本日のベスト：${daily.score}点` : "本日はまだ未挑戦");
+}
+
+/* =========================================================
+   苦手単語の集中特訓モード
+   ミスが多かった単語だけを集めた特別なお題プールで練習できる。
+   ========================================================= */
+
+function loadMissStats() {
+  try {
+    return JSON.parse(safeGet(MISS_STATS_KEY)) || {};
+  } catch (err) {
+    return {};
+  }
+}
+
+function recordWordMiss(word) {
+  const stats = loadMissStats();
+  stats[word] = (stats[word] || 0) + 1;
+  safeSet(MISS_STATS_KEY, JSON.stringify(stats));
+}
+
+function buildWeakWordPool(limit) {
+  const stats = loadMissStats();
+  const allWords = [...EASY_WORDS, ...NORMAL_WORDS, ...HARD_WORDS, ...EXPERT_WORDS];
+  const withMiss = allWords.filter((w) => stats[w.word] > 0);
+  withMiss.sort((a, b) => (stats[b.word] || 0) - (stats[a.word] || 0));
+
+  const pool = withMiss.slice(0, limit || WEAK_POOL_SIZE);
+
+  // 苦手記録がまだ少ない場合は、ランダムな単語で埋めて最低限の数を確保する
+  const minPoolSize = Math.min(10, allWords.length);
+  if (pool.length < minPoolSize) {
+    const existing = new Set(pool.map((w) => w.word));
+    const shuffled = [...allWords].sort(() => Math.random() - 0.5);
+    for (const w of shuffled) {
+      if (pool.length >= minPoolSize) break;
+      if (!existing.has(w.word)) {
+        pool.push(w);
+        existing.add(w.word);
+      }
+    }
+  }
+  return pool;
+}
+
+function refreshWeakButton() {
+  const stats = loadMissStats();
+  const count = Object.keys(stats).filter((w) => stats[w] > 0).length;
+  el.weakStatusInline.textContent =
+    count > 0 ? `ミスが多い${Math.min(count, WEAK_POOL_SIZE)}語で特訓` : "まだミスの記録がありません";
 }
 
 /* =========================================================
@@ -218,7 +275,11 @@ function buildCrowd() {
 }
 
 function pickWord(excludeWord) {
-  const pool = state.isDaily ? NORMAL_WORDS : DIFFICULTIES[state.difficulty].words;
+  const pool = state.isDaily
+    ? NORMAL_WORDS
+    : state.isWeak
+    ? state.weakPool
+    : DIFFICULTIES[state.difficulty].words;
   const rand = state.isDaily && state.rng ? state.rng : Math.random;
   let candidate;
   do {
@@ -227,12 +288,14 @@ function pickWord(excludeWord) {
   return candidate;
 }
 
-function initState(difficulty, practice, isDaily) {
+function initState(difficulty, practice, isDaily, isWeak) {
   return {
     running: false,
     difficulty,
     practice: !!practice,
     isDaily: !!isDaily,
+    isWeak: !!isWeak,
+    weakPool: isWeak ? buildWeakWordPool() : null,
     rng: isDaily ? mulberry32(hashSeedFromString(todayDateString())) : null,
     timeLeft: GAME_SECONDS,
     score: 0,
@@ -314,13 +377,30 @@ function updateHud() {
   }
 }
 
+function getUnlockedPenlightColors() {
+  const unlocked = new Set(loadUnlockedTitles());
+  const colors = ["--gold", "--pink", "--cyan"];
+  if (unlocked.has("expert_clear")) colors.push("--purple");
+  if (unlocked.has("daily_clear")) colors.push("--mint");
+  if (unlocked.has("kana_master")) colors.push("--violet");
+  return colors;
+}
+
 function lightNextPenlight() {
   const lights = el.crowd.children;
   if (lights.length === 0) return;
   state.litCount = (state.litCount + 1) % lights.length;
   const target = lights[state.litCount];
-  const color = PENLIGHT_COLORS[Math.floor(Math.random() * PENLIGHT_COLORS.length)];
-  target.style.setProperty("--glow", `var(${color})`);
+  target.classList.remove("rainbow");
+
+  const unlocked = new Set(loadUnlockedTitles());
+  if (unlocked.has("combo_king") && Math.random() < 0.12) {
+    target.classList.add("rainbow");
+  } else {
+    const colors = getUnlockedPenlightColors();
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    target.style.setProperty("--glow", `var(${color})`);
+  }
   target.classList.add("lit");
 }
 
@@ -337,13 +417,32 @@ function burstSpotlight() {
 }
 
 function celebrateHypeMax() {
+  const isMiracle = state.combo >= 8;
+
   el.crowd.classList.add("wave");
+  if (isMiracle) {
+    Array.from(el.crowd.children).forEach((p) => p.classList.add("rainbow"));
+  }
+
+  el.hypeBanner.textContent = isMiracle ? "奇跡の瞬間！" : "熱狂の渦！";
   el.hypeBanner.classList.remove("show");
   void el.hypeBanner.offsetWidth;
   el.hypeBanner.classList.add("show");
-  sfxHypeMax();
-  vibrate([40, 60, 40, 60, 120]);
-  setTimeout(() => el.crowd.classList.remove("wave"), 1400);
+
+  if (isMiracle) {
+    sfxMiracle();
+    vibrate([40, 60, 40, 60, 40, 60, 200]);
+  } else {
+    sfxHypeMax();
+    vibrate([40, 60, 40, 60, 120]);
+  }
+
+  setTimeout(() => {
+    el.crowd.classList.remove("wave");
+    if (isMiracle) {
+      Array.from(el.crowd.children).forEach((p) => p.classList.remove("rainbow"));
+    }
+  }, 1400);
 }
 
 function isAnswerMatch(typed, romajiOptions) {
@@ -384,6 +483,7 @@ function onMissKeystroke() {
   state.combo = 0;
   state.hype = Math.max(0, state.hype - cfg.missPenalty);
   if (state.hype < 100) state.hypeCelebrated = false;
+  if (state.current) recordWordMiss(state.current.word);
   flashMiss();
   sfxMiss();
   vibrate([25, 40, 25]);
@@ -466,10 +566,10 @@ function rankFor(score) {
   return "路上ライブ初日";
 }
 
-function startGame(isDaily) {
+function startGame(isDaily, isWeak) {
   ensureAudio();
-  const practice = isDaily ? false : !!(el.practiceToggle && el.practiceToggle.checked);
-  state = initState(isDaily ? "normal" : selectedDifficulty, practice, isDaily);
+  const practice = (isDaily || isWeak) ? false : !!(el.practiceToggle && el.practiceToggle.checked);
+  state = initState(isDaily || isWeak ? "normal" : selectedDifficulty, practice, isDaily, isWeak);
   state.running = true;
   buildCrowd();
   nextWord();
@@ -515,9 +615,9 @@ function runCountdown(onDone) {
   }, 800);
 }
 
-function beginWithCountdown(isDaily) {
+function beginWithCountdown(isDaily, isWeak) {
   ensureAudio();
-  runCountdown(() => startGame(isDaily));
+  runCountdown(() => startGame(isDaily, isWeak));
 }
 
 function renderNewTitles(newTitles) {
@@ -530,6 +630,53 @@ function renderNewTitles(newTitles) {
   el.newTitles.innerHTML =
     `<p class="new-titles-heading">🎉 新しい称号を獲得！</p>` +
     newTitles.map((t) => `<span class="new-title-badge">${t.name}</span>`).join("");
+}
+
+function renderTrendChart() {
+  const history = loadRunHistory()
+    .filter((h) => !h.practice)
+    .slice(-8);
+
+  if (history.length < 2) {
+    el.trendWrap.hidden = true;
+    return;
+  }
+  el.trendWrap.hidden = false;
+
+  const canvas = el.trendCanvas;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const scores = history.map((r) => r.score);
+  const max = Math.max(...scores, 1);
+  const min = Math.min(...scores, 0);
+  const range = Math.max(max - min, 1);
+  const padding = 10;
+  const stepX = scores.length > 1 ? (w - padding * 2) / (scores.length - 1) : 0;
+  const toY = (s) => h - padding - ((s - min) / range) * (h - padding * 2);
+
+  ctx.strokeStyle = "#ffd166";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  scores.forEach((s, i) => {
+    const x = padding + i * stepX;
+    const y = toY(s);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  scores.forEach((s, i) => {
+    const x = padding + i * stepX;
+    const y = toY(s);
+    const isLast = i === scores.length - 1;
+    ctx.fillStyle = isLast ? "#ff6fa5" : "#6fd9ff";
+    ctx.beginPath();
+    ctx.arc(x, y, isLast ? 4 : 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
 }
 
 function endGame() {
@@ -547,6 +694,7 @@ function endGame() {
     difficulty: state.difficulty,
     practice: state.practice,
     isDaily: state.isDaily,
+    isWeak: state.isWeak,
     maxCombo: state.maxCombo,
     usedKana: state.usedKana,
     usedRomaji: state.usedRomaji,
@@ -555,6 +703,7 @@ function endGame() {
   };
 
   recordRun(ctx);
+  renderTrendChart();
   const newTitles = evaluateTitles(ctx);
 
   if (state.practice) {
@@ -564,6 +713,9 @@ function endGame() {
     const daily = getTodayDaily();
     el.resultRank.textContent = `${rankFor(state.score)}（本日のステージ）`;
     el.resultBest.textContent = `本日のベスト：${daily ? daily.score : state.score}`;
+  } else if (state.isWeak) {
+    el.resultRank.textContent = `${rankFor(state.score)}（苦手克服モード）`;
+    el.resultBest.textContent = "苦手克服モードは自己ベストの記録対象外です";
   } else {
     const { isNew, best } = saveBestScoreIfHigher(state.difficulty, state.score);
     el.resultRank.textContent = rankFor(state.score);
@@ -581,6 +733,7 @@ function endGame() {
 
   refreshStartBest();
   refreshDailyButton();
+  refreshWeakButton();
 }
 
 function pauseGame() {
@@ -612,6 +765,7 @@ function backToMenu() {
   el.startOverlay.hidden = false;
   refreshStartBest();
   refreshDailyButton();
+  refreshWeakButton();
 }
 
 el.startBtn.addEventListener("click", () => beginWithCountdown(false));
@@ -667,7 +821,11 @@ if (el.practiceToggle) {
 
 /* ---------- デイリーチャレンジ ---------- */
 refreshDailyButton();
-el.dailyBtn.addEventListener("click", () => beginWithCountdown(true));
+el.dailyBtn.addEventListener("click", () => beginWithCountdown(true, false));
+
+/* ---------- 苦手克服モード ---------- */
+refreshWeakButton();
+el.weakBtn.addEventListener("click", () => beginWithCountdown(false, true));
 
 /* ---------- 称号一覧 ---------- */
 function renderTitlesOverlay() {
@@ -711,7 +869,11 @@ function renderRankingOverlay() {
     el.rankingList.innerHTML = top.map((h, i) => {
       const d = new Date(h.date);
       const dateLabel = `${d.getMonth() + 1}/${d.getDate()}`;
-      const diffLabel = h.isDaily ? "デイリー" : (DIFFICULTIES[h.difficulty] ? DIFFICULTIES[h.difficulty].label : h.difficulty);
+      const diffLabel = h.isDaily
+        ? "デイリー"
+        : h.isWeak
+        ? "苦手克服"
+        : (DIFFICULTIES[h.difficulty] ? DIFFICULTIES[h.difficulty].label : h.difficulty);
       return (
         `<div class="rank-row">` +
         `<span class="rank-no">${i + 1}</span>` +

@@ -4,6 +4,9 @@
   --gold: #ffd166;
   --pink: #ff6fa5;
   --cyan: #6fd9ff;
+  --purple: #b388ff;
+  --mint: #7cffc4;
+  --violet: #d9a8ff;
   --ink: #f5f0ea;
   --ink-dim: #b9b3d6;
   --miss: #ff4d5e;
@@ -79,6 +82,18 @@ body{
 @keyframes sway{
   0%, 100% { transform: rotate(-6deg); }
   50% { transform: rotate(6deg); }
+}
+
+/* 「コンボ王」称号を解放すると、まれに虹色に光るペンライトが出現する */
+.penlight.lit.rainbow{
+  background: linear-gradient(180deg, var(--pink), var(--gold), var(--cyan), var(--purple));
+  box-shadow: 0 0 18px 3px rgba(255,255,255,0.5);
+  animation: sway 1.6s ease-in-out infinite, rainbowHue 2.5s linear infinite;
+}
+
+@keyframes rainbowHue{
+  0%{ filter: hue-rotate(0deg) saturate(1.3); }
+  100%{ filter: hue-rotate(360deg) saturate(1.3); }
 }
 
 /* ---------- スポットライト ---------- */
@@ -263,6 +278,10 @@ body{
 
 .crowd.wave .penlight.lit{
   animation: swayBig 0.5s ease-in-out infinite;
+}
+
+.crowd.wave .penlight.lit.rainbow{
+  animation: swayBig 0.5s ease-in-out infinite, rainbowHue 1.2s linear infinite;
 }
 
 @keyframes swayBig{
@@ -479,6 +498,19 @@ body{
   transform: translateY(-1px);
 }
 
+.daily-btn.weak-btn{
+  border-color: rgba(255, 111, 165, 0.35);
+  background: rgba(255, 111, 165, 0.08);
+}
+
+.daily-btn.weak-btn:hover{
+  background: rgba(255, 111, 165, 0.16);
+}
+
+.daily-btn.weak-btn .daily-btn-status{
+  color: var(--pink);
+}
+
 .daily-btn-title{
   font-family: var(--font-body);
   font-weight: 700;
@@ -637,6 +669,18 @@ body{
   gap: 28px;
   margin: 0 0 30px;
 }
+
+.trend-wrap{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.trend-wrap canvas{
+  display: block;
+}
 .result-stats > div{ display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .result-num{
   font-family: var(--font-mono);
@@ -744,6 +788,11 @@ body{
 }
 
 .flick-preview{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  box-sizing: border-box;
   font-family: var(--font-display);
   font-weight: 900;
   font-size: 26px;
@@ -756,7 +805,10 @@ body{
   text-align: center;
 }
 
-.flick-preview[hidden]{ display: none; }
+/* 文字が無い時も高さを保ったまま見た目だけ消す（表示/非表示の切り替えでキーボードがガタつくのを防ぐ） */
+.flick-preview.empty{
+  visibility: hidden;
+}
 
 .flick-grid{
   display: grid;

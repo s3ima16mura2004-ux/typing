@@ -72,9 +72,10 @@ if (flickKb) {
     const ch = currentPendingChar();
     if (ch) {
       flickPreview.textContent = ch;
-      flickPreview.hidden = false;
+      flickPreview.classList.remove("empty");
     } else {
-      flickPreview.hidden = true;
+      flickPreview.textContent = "";
+      flickPreview.classList.add("empty");
     }
   }
 

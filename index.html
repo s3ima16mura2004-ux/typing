@@ -94,6 +94,11 @@
       <span class="daily-btn-status" id="dailyStatusInline">本日はまだ未挑戦</span>
     </button>
 
+    <button type="button" class="daily-btn weak-btn" id="weakBtn">
+      <span class="daily-btn-title">🎯 苦手克服モード</span>
+      <span class="daily-btn-status" id="weakStatusInline">まだミスの記録がありません</span>
+    </button>
+
     <div class="menu-links">
       <button type="button" class="overlay-btn overlay-btn--sub" id="titlesBtn">🏆 称号一覧</button>
       <button type="button" class="overlay-btn overlay-btn--sub" id="rankingBtn">📊 ランキング</button>
@@ -112,6 +117,10 @@
       <div><span class="hud-label">SCORE</span><span class="result-num" id="resultScore">0</span></div>
       <div><span class="hud-label">正打数</span><span class="result-num" id="resultChars">0</span></div>
       <div><span class="hud-label">正答率</span><span class="result-num" id="resultAcc">0%</span></div>
+    </div>
+    <div class="trend-wrap" id="trendWrap" hidden>
+      <span class="hud-label">直近のスコア推移</span>
+      <canvas id="trendCanvas" width="280" height="70"></canvas>
     </div>
     <div class="new-titles" id="newTitles" hidden></div>
     <button class="overlay-btn" id="retryBtn">アンコール（もう一度）</button>
@@ -206,7 +215,7 @@
 
   <!-- 専用オンスクリーンキーボード（かな・端末のフリック入力と同じ配置） -->
   <div class="flick-kb" id="flickKb" hidden>
-    <div class="flick-preview" id="flickPreview" hidden></div>
+    <div class="flick-preview empty" id="flickPreview"></div>
     <div class="flick-grid">
       <button type="button" class="flick-key" data-row="あ">あ</button>
       <button type="button" class="flick-key" data-row="か">か</button>
