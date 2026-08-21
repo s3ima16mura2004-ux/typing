@@ -939,3 +939,28 @@ body{
 @media (hover: hover) and (pointer: fine){
   .kbd-area{ display: none; }
 }
+
+/* タッチ専用端末（スマホ等）では、ステージ演出の高さを抑えて、
+   お題表示とキーボードがスクロールなしで画面に収まるようにする */
+@media (hover: none) and (pointer: coarse){
+  .stage{
+    max-height: 38vh;
+  }
+
+  .kbd-area{
+    gap: 6px;
+  }
+
+  .kbd-hint{
+    font-size: 10px;
+  }
+
+  .flick-grid{
+    grid-template-columns: repeat(3, minmax(0, 72px));
+    gap: 5px;
+  }
+
+  .mini-prompter{
+    padding: 6px 12px;
+  }
+}
