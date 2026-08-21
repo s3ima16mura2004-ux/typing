@@ -68,6 +68,7 @@ const el = {
   countdownOverlay: document.getElementById("countdownOverlay"),
   countdownNum: document.getElementById("countdownNum"),
   practiceToggle: document.getElementById("practiceToggle"),
+  kbdArea: document.getElementById("kbdArea"),
 };
 
 let state = null;
@@ -578,6 +579,7 @@ function startGame(isDaily, isWeak) {
   el.resultOverlay.hidden = true;
   el.pauseOverlay.hidden = true;
   el.hypeBanner.classList.remove("show");
+  el.kbdArea.hidden = false; // プレイ中だけキーボードエリアを表示する
   state.timerId = setInterval(tick, 1000);
   startBgm();
 
@@ -730,6 +732,7 @@ function endGame() {
   renderNewTitles(newTitles);
   el.pauseOverlay.hidden = true;
   el.resultOverlay.hidden = false;
+  el.kbdArea.hidden = true; // 結果画面ではキーボードエリアを隠す
 
   refreshStartBest();
   refreshDailyButton();
@@ -742,11 +745,13 @@ function pauseGame() {
   clearInterval(state.timerId);
   stopBgm();
   el.pauseOverlay.hidden = false;
+  el.kbdArea.hidden = true; // 一時停止中はキーボードエリアを隠す
 }
 
 function resumeGame() {
   if (!state) return;
   el.pauseOverlay.hidden = true;
+  el.kbdArea.hidden = false; // 再開したらキーボードエリアを再び表示する
   state.running = true;
   state.timerId = setInterval(tick, 1000);
   startBgm();
@@ -763,6 +768,7 @@ function backToMenu() {
   el.resultOverlay.hidden = true;
   el.countdownOverlay.hidden = true;
   el.startOverlay.hidden = false;
+  el.kbdArea.hidden = true; // メニューに戻ったらキーボードエリアを隠す
   refreshStartBest();
   refreshDailyButton();
   refreshWeakButton();

@@ -712,6 +712,10 @@ body{
   user-select: none;
 }
 
+.kbd-area[hidden]{
+  display: none;
+}
+
 /* キーボード表示中も常に見えるミニ表示（スティッキーで画面上部に固定） */
 .mini-prompter{
   position: sticky;
