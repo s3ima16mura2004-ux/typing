@@ -174,7 +174,11 @@ function joinOnlineRoom() {
       });
     })
     .then((result) => {
-      if (result === null || result === undefined) return; // 上でエラー表示済み、もしくは既存チェックで弾かれた
+      // ref.update() が成功すると undefined が返るのは正常なので、undefined を
+      // エラー扱いにしてはいけない。エラー時だけ明示的に null を返しているので、
+      // null かどうかだけで判定する（以前は undefined も弾いてしまい、参加が
+      // 成功しているのに画面が進まないバグになっていた）。
+      if (result === null) return; // 上でエラー表示済み、もしくは既存チェックで弾かれた
       onlineMatch = { roomCode: code, role: "guest", resultShown: false, countdownScheduled: false };
       showOnlineWaitScreen(code, false);
       attachRoomListener(code, "guest");
