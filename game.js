@@ -15,6 +15,7 @@ const WEAK_POOL_SIZE = 12;
 
 const el = {
   crowd: document.getElementById("crowd"),
+  stage: document.getElementById("stage"),
   spotlight: document.getElementById("spotlight"),
   mic: document.getElementById("mic"),
   muteBtn: document.getElementById("muteBtn"),
@@ -580,6 +581,7 @@ function startGame(isDaily, isWeak) {
   el.pauseOverlay.hidden = true;
   el.hypeBanner.classList.remove("show");
   el.kbdArea.hidden = false; // プレイ中だけキーボードエリアを表示する
+  el.stage.classList.add("compact"); // プレイ中はステージを小さくしてキーボードのスペースを確保する
   state.timerId = setInterval(tick, 1000);
   startBgm();
 
@@ -733,6 +735,7 @@ function endGame() {
   el.pauseOverlay.hidden = true;
   el.resultOverlay.hidden = false;
   el.kbdArea.hidden = true; // 結果画面ではキーボードエリアを隠す
+  el.stage.classList.remove("compact"); // 結果画面はステージを通常サイズに戻す
 
   refreshStartBest();
   refreshDailyButton();
@@ -746,12 +749,14 @@ function pauseGame() {
   stopBgm();
   el.pauseOverlay.hidden = false;
   el.kbdArea.hidden = true; // 一時停止中はキーボードエリアを隠す
+  el.stage.classList.remove("compact"); // 一時停止中はステージを通常サイズに戻す
 }
 
 function resumeGame() {
   if (!state) return;
   el.pauseOverlay.hidden = true;
   el.kbdArea.hidden = false; // 再開したらキーボードエリアを再び表示する
+  el.stage.classList.add("compact"); // 再開したらステージを再び小さくする
   state.running = true;
   state.timerId = setInterval(tick, 1000);
   startBgm();
@@ -769,6 +774,7 @@ function backToMenu() {
   el.countdownOverlay.hidden = true;
   el.startOverlay.hidden = false;
   el.kbdArea.hidden = true; // メニューに戻ったらキーボードエリアを隠す
+  el.stage.classList.remove("compact"); // メニューに戻ったらステージを通常サイズに戻す
   refreshStartBest();
   refreshDailyButton();
   refreshWeakButton();

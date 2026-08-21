@@ -944,10 +944,11 @@ body{
   .kbd-area{ display: none; }
 }
 
-/* タッチ専用端末（スマホ等）では、ステージ演出の高さを抑えて、
-   お題表示とキーボードがスクロールなしで画面に収まるようにする */
+/* タッチ専用端末（スマホ等）では、プレイ中（.stage.compact）だけステージ演出の高さを抑えて、
+   お題表示とキーボードがスクロールなしで画面に収まるようにする。
+   メニュー画面など（.compactが付いていない時）は通常通りフルの高さを使う。 */
 @media (hover: none) and (pointer: coarse){
-  .stage{
+  .stage.compact{
     max-height: 38vh;
   }
 
